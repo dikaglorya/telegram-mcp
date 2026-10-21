@@ -257,6 +257,7 @@ function printPlan(p: Plan, checkOnly: boolean): void {
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
+  const checkOnly = argv.includes("--check") || argv.includes("--dry-run");
 
   if (argv.includes("--help") || argv.includes("-h")) {
     out(

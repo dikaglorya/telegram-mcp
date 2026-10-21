@@ -1303,6 +1303,19 @@ check("update: the notice names a command the user can actually run", async () =
   return line.trim();
 });
 
+check("update: the upgrade command matches how this copy was installed", async () => {
+  const { detectInstall } = await load("dist/cli/update.js");
+  const layout = detectInstall();
+  // A dev checkout must be reported as a checkout: `npm i -g` would install a
+  // second copy instead of updating this one.
+  if (!fs.existsSync(path.join(root, ".git"))) return `no git metadata here, layout=${layout.kind}`;
+  if (layout.kind !== "source") throw new Error(`expected "source" for a git checkout, got "${layout.kind}"`);
+  if (path.resolve(layout.location) !== path.resolve(root)) {
+    throw new Error(`location ${layout.location} is not the package root ${root}`);
+  }
+  return `detected "${layout.kind}" at ${layout.location}`;
+});
+
 check("cli: --version and --help answer before the transport starts", async () => {
   const { spawnSync } = await import("node:child_process");
   for (const flag of ["--version", "-v"]) {

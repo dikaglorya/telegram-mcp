@@ -539,7 +539,7 @@ The repository ships with a unit suite and a real MCP harness that spawns the bu
 npm install
 npm run build
 
-npm run test:unit          # 71 offline checks
+npm run test:unit          # 72 offline checks
 npm run test:mcp           # read-only end-to-end pass
 npm run test:mcp:write     # + self-cleaning writes
 npm run test:destructive   # + disposable chats (opt-in, flood-limited)

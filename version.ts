@@ -17,8 +17,12 @@ import { fileURLToPath } from "node:url";
 export const SERVER_NAME = "telegram-mcp";
 export const PACKAGE_NAME = "@dikacode/telegram-mcp";
 
-/** Last resort when package.json is unreadable (e.g. a stripped bundle). */
-const FALLBACK_VERSION = "1.0.1";
+/**
+ * Last resort when package.json is unreadable. Deliberately not a plausible
+ * version: a guess here would make the update check nag about a release the
+ * user may already be running, so an unknown version disables the notice.
+ */
+const FALLBACK_VERSION = "0.0.0-unknown";
 
 function readVersion(): string {
   let dir = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +44,9 @@ function readVersion(): string {
 }
 
 export const SERVER_VERSION = readVersion();
+
+/** True when package.json could not be read, so the version is not trustworthy. */
+export const VERSION_IS_KNOWN = SERVER_VERSION !== "0.0.0-unknown";
 
 /** Dotted-numeric comparison, prerelease-aware, with no dependency. */
 export function compareVersions(a: string, b: string): number {

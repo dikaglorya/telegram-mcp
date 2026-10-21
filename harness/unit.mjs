@@ -1341,6 +1341,23 @@ check("cli: an unknown flag still boots the server (MCP clients pass none)", asy
   return "only --version/-v/--help/-h short-circuit";
 });
 
+check("version: an unreadable package.json disables the update notice", async () => {
+  // A guessed fallback version would nag every user about a release they may
+  // already be running, so the module must recognise that it does not know.
+  const src = fs.readFileSync(path.join(root, "version.ts"), "utf8");
+  const m = /const FALLBACK_VERSION = "([^"]+)"/.exec(src);
+  if (!m) throw new Error("FALLBACK_VERSION is gone");
+  const { compareVersions } = await load("dist/version.js");
+  // Whatever the fallback is, it must sort *below* any real release, so it can
+  // never be mistaken for "already up to date" or for a plausible version.
+  if (compareVersions(m[1], "1.0.0") >= 0) {
+    throw new Error(`fallback ${m[1]} sorts at or above a real release`);
+  }
+  const upd = fs.readFileSync(path.join(root, "update-check.ts"), "utf8");
+  if (!/VERSION_IS_KNOWN/.test(upd)) throw new Error("update-check ignores VERSION_IS_KNOWN");
+  return m[1];
+});
+
 const failed = results.filter((r) => r.status === "FAIL");for (const r of results) {
   const icon = r.status === "PASS" ? "✅" : "❌";
   console.log(`${icon} ${r.name}${r.detail ? ` — ${r.detail}` : ""}`);

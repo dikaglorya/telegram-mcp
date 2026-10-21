@@ -21,7 +21,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PACKAGE_NAME, SERVER_VERSION, compareVersions } from "./version.js";
+import { PACKAGE_NAME, SERVER_VERSION, VERSION_IS_KNOWN, compareVersions } from "./version.js";
 
 const DEFAULT_TIMEOUT_MS = 800;
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -114,6 +114,9 @@ async function fetchLatest(): Promise<string | null> {
  */
 export async function getUpdateInfo(opts: { allowNetwork?: boolean } = {}): Promise<UpdateInfo> {
   const current = SERVER_VERSION;
+  // Without a trustworthy local version, "newer" has no meaning: skip the
+  // notice rather than telling every user to upgrade to something.
+  if (!VERSION_IS_KNOWN) return { current, latest: current, updateAvailable: false, source: "unknown" };
   if (!enabled()) return { current, latest: current, updateAvailable: false, source: "disabled" };
 
   const cached = readCache();

@@ -8,6 +8,16 @@ Thanks for taking the time to look at this. Bug reports, tool ideas and pull req
 - For a large change, open an issue first so we can agree on the shape before you spend a weekend on it.
 - Security issues go through [SECURITY.md](SECURITY.md), not the public tracker.
 
+## Reporting a bug
+
+Use the issue forms: <https://github.com/dikaglorya/telegram-mcp/issues/new/choose>. Pick **Bug report** for a broken tool or a server that will not start, and **Feature request** for a missing tool or behaviour.
+
+The bug form asks for the version, install path, MCP client, OS, the tool involved, the error code, reproduction steps and `telegram_doctor` output. Fill those in and the report is usually actionable without a follow-up.
+
+Never paste an `api_hash`, a session string, a login code, a 2FA password, your phone number, or private message text. Redact private chat ids and usernames too — issues are public.
+
+Security problems (secret leakage, allowlist bypass, path traversal, session handling, a write tool that reports success without changing anything) must use GitHub's private advisory flow instead: <https://github.com/dikaglorya/telegram-mcp/security/advisories/new>.
+
 ## Development setup
 
 ```bash

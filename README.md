@@ -206,8 +206,8 @@ The server is the same in every client; only the wrapper differs. Use the `npx` 
 
 ```bash
 claude mcp add telegram \
-  --env TELEGRAM_API_ID=1234567 \
-  --env TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef \
+  -e TELEGRAM_API_ID=1234567 \
+  -e TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef \
   -- npx -y github:dikaglorya/telegram-mcp
 ```
 

@@ -120,10 +120,10 @@ function journalRemove(chat, ids) {
 /**
  * Is this message one the harness made?
  *
- * A watermark alone is not enough: the owner may write to Saved Messages while a
- * run is in progress, and anything newer than the watermark would then be
- * attributed to the harness. That is how a cleanup script once deleted two of the
- * owner's own notes. A message counts as debris only if it carries the harness
+ * A watermark alone is not enough: another client may write to Saved Messages
+ * while a run is in progress, and anything newer than the watermark would then be
+ * attributed to the harness. That is how a cleanup script once deleted two
+ * messages that predated the run. A message counts as debris only if it carries the harness
  * marker text or is a poll/location, which the harness is the only producer of
  * in this chat. Everything else is left alone and reported, never deleted.
  */
@@ -2284,7 +2284,7 @@ async function main() {
       }
     }
     // Anything newer than the watermark that is NOT harness debris was written by
-    // the account owner (or another client) during the run. It is never deleted and
+    // another client during the run. It is never deleted and
     // never counted as this run's fault — but it is reported, so a run does not
     // silently attribute someone else's message to itself.
     let foreign = [];
@@ -2429,7 +2429,7 @@ const DEBRIS_TITLE = /^(?:\[(?:harness|trace|probe)\].*|harness)$/i;
  * This exists because of a real mistake: a run was throttled halfway through the
  * media scenario, two attachments were left in Saved Messages, and a hand-written
  * "delete anything recent with media" script took eight messages with it — six
- * of them harness debris, two of them the account owner's own notes. Guessing
+ * of them harness debris, two of them messages that predated the run. Guessing
  * from "looks like debris" is not safe in a chat the user also writes to.
  *
  * So this mode does not guess. A run records every message id it creates in

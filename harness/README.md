@@ -242,7 +242,7 @@ is nothing to do.
 This exists because of a real mistake. A run was throttled after `send_contact`
 had already created the message, two attachments were left behind, and a
 hand-written "delete recent messages with media" script removed eight messages —
-six harness leftovers and two of the account owner's own notes. The lesson is
+six harness leftovers and two messages that predated the run. The lesson is
 that "looks like debris" is not a safe test in a chat the user also writes to.
 Now a send is bracketed by a watermark *before* the call, so even a send that
 reports `FLOOD` while creating the message is recorded and can be reclaimed

@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/dikaglorya/telegram-mcp/releases"><img alt="version" src="https://img.shields.io/badge/version-1.0.0-5eead4?style=flat-square"></a>
+  <a href="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="node" src="https://img.shields.io/badge/node-%E2%89%A5%2020-0ea5e9?style=flat-square">
   <img alt="tools" src="https://img.shields.io/badge/tools-69-a78bfa?style=flat-square">
   <img alt="transport" src="https://img.shields.io/badge/transport-stdio-38bdf8?style=flat-square">
@@ -29,7 +30,7 @@
 Most Telegram integrations give a bot a token. A bot only sees the chats it was added to, cannot read your history, and can never act as you. This project connects an agent to **your account** instead, so its tools operate on the chats, contacts and messages you already have.
 
 - **Full account access.** 69 tools spanning messages, chats, media, contacts, admin actions and session management.
-- **No terminal step for the user.** Credentials can be written by `telegram_setup`, and the first login happens entirely inside the chat — code and two-step password included.
+- **Login without a terminal step.** Credentials can be written by `telegram_setup`, and the first login happens entirely inside the chat — code and two-step password included.
 - **One local process.** stdio transport, no listening port, no cloud relay, no telemetry.
 - **Cross-platform.** Linux, macOS and Windows. Paths are resolved with `path`; POSIX permissions go through a shim that is a no-op on Windows.
 - **Honest answers.** Every state-changing tool reads the result back before reporting success. If Telegram accepted a call and ignored it, the tool tells you that instead of echoing the request.

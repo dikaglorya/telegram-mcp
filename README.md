@@ -11,7 +11,6 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@dikacode/telegram-mcp"><img alt="npm" src="https://img.shields.io/npm/v/@dikacode/telegram-mcp?style=flat-square&color=5eead4&label=npm"></a>
-  <a href="https://www.npmjs.com/package/@dikacode/telegram-mcp"><img alt="downloads" src="https://img.shields.io/npm/dm/@dikacode/telegram-mcp?style=flat-square&color=38bdf8"></a>
   <a href="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="node" src="https://img.shields.io/badge/node-%E2%89%A5%2020-0ea5e9?style=flat-square">
   <img alt="tools" src="https://img.shields.io/badge/tools-69-a78bfa?style=flat-square">

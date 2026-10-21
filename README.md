@@ -44,8 +44,29 @@ Most Telegram integrations give a bot a token. A bot only sees the chats it was 
 | State | `~/.telegram-mcp/` — session file `0600`, state dir `0700` |
 | Network | outbound to Telegram only; **no inbound port** |
 
+## Quick start
+
+<p align="center">
+  <img src="assets/terminal.svg" width="100%" alt="Animated terminal: clone the repository, install, add credentials, and start the server">
+</p>
+
+```bash
+git clone https://github.com/dikaglorya/telegram-mcp.git
+cd telegram-mcp
+npm install
+npm run build
+cp .env.example .env
+# add TELEGRAM_API_ID and TELEGRAM_API_HASH from my.telegram.org/apps
+npm start
+```
+
+The server speaks MCP over stdio, so in normal use your MCP client starts it for you — the last command is only for a manual check. Add the server to your client with the snippets in [Connect your agent](#connect-your-agent), then ask the agent to log in. The code and the two-step password are typed in chat, never in a terminal.
+
+No checkout? `npx -y github:dikaglorya/telegram-mcp` fetches, builds and runs the same server from a temporary install.
+
 ## Contents
 
+- [Quick start](#quick-start)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Install](#install)
@@ -279,6 +300,10 @@ Use the same `mcpServers` JSON as above, then restart the app.
 ### Anything else
 
 The contract is small: spawn a process, speak MCP JSON-RPC over stdio, pass the two environment variables. If your client supports stdio MCP servers, it supports this one.
+
+<p align="center">
+  <img src="assets/divider.svg" width="100%" alt="">
+</p>
 
 ## Tools
 

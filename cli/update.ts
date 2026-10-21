@@ -255,7 +255,12 @@ function printPlan(p: Plan, checkOnly: boolean): void {
   }
 }
 
-async function main(): Promise<void> {
+/**
+ * Exported because `telegram-mcp update` reaches this file by dynamic import
+ * from index.ts. The guard at the bottom keeps the import side-effect free for
+ * the unit checks, so the dispatcher has to call this itself.
+ */
+export async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const checkOnly = argv.includes("--check") || argv.includes("--dry-run");
 

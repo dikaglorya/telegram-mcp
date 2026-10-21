@@ -62,20 +62,21 @@ function help(): string {
 function dispatchSubcommand(argv: string[]): boolean {
   const command = argv[0];
   if (command !== "login" && command !== "doctor" && command !== "update") return false;
-  // Each module runs its own main() on import; they keep the same behaviour as
-  // `npm run login` and `npm run doctor`, just reachable from one binary.
+  // login and doctor run their main() on import. update cannot: it is imported
+  // by the unit checks, so it only runs when this dispatcher asks it to.
   const targets: Record<string, string> = {
     login: "./cli/login.js",
     doctor: "./cli/doctor.js",
     update: "./cli/update.js",
   };
-  const target = targets[command];
-  void import(target).catch((err) => {
-    process.stderr.write(
-      `${theme.fail(`${sym.fail} cannot start ${command}: ${err instanceof Error ? err.message : String(err)}`)}\n`,
-    );
-    process.exit(1);
-  });
+  void import(targets[command])
+    .then((mod: { main?: () => Promise<void> }) => mod.main?.())
+    .catch((err) => {
+      process.stderr.write(
+        `${theme.fail(`${sym.fail} cannot start ${command}: ${err instanceof Error ? err.message : String(err)}`)}\n`,
+      );
+      process.exit(1);
+    });
   return true;
 }
 
@@ -89,11 +90,14 @@ function handleCliFlags(argv: string[]): boolean {
     process.stdout.write(`${SERVER_VERSION}\n`);
     return true;
   }
+  // A subcommand owns its own flags: `telegram-mcp update --help` must describe
+  // update, not print the server's usage text.
+  if (dispatchSubcommand(args)) return true;
   if (args.includes("--help") || args.includes("-h") || args[0] === "help") {
     process.stdout.write(help());
     return true;
   }
-  return dispatchSubcommand(args);
+  return false;
 }
 
 function startupBanner(configured: boolean, allowAll: boolean, allowlist: number): void {

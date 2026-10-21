@@ -1316,6 +1316,21 @@ check("update: the upgrade command matches how this copy was installed", async (
   return `detected "${layout.kind}" at ${layout.location}`;
 });
 
+check("update: the subcommand answers through the binary, not just its module", async () => {
+  const { spawnSync } = await import("node:child_process");
+  // Regression guard: update.ts exports main() and guards its own direct
+  // invocation, so an import from index.ts used to do nothing at all — the
+  // command exited 0 with no output.
+  const run = spawnSync(process.execPath, [path.join(root, "dist", "index.js"), "update", "--check"], {
+    encoding: "utf8",
+    timeout: 30_000,
+    env: { ...process.env, TELEGRAM_UPDATE_CHECK_TIMEOUT_MS: "1", TELEGRAM_STATE_DIR: "/tmp/telegram-mcp-unit" },
+  });
+  if (run.status !== 0) throw new Error(`update --check exited ${run.status}: ${run.stderr}`);
+  if (!run.stdout.includes("installed")) throw new Error(`update --check printed no plan: ${JSON.stringify(run.stdout)}`);
+  return "binary prints the plan";
+});
+
 check("cli: --version and --help answer before the transport starts", async () => {
   const { spawnSync } = await import("node:child_process");
   for (const flag of ["--version", "-v"]) {

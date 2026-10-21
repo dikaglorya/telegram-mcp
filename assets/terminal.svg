@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" role="img" aria-labelledby="termTitle termDesc">
+  <title id="termTitle">Quick start</title>
+  <desc id="termDesc">An animated terminal that types the install commands and reports a connected server with 69 tools.</desc>
+  <defs>
+    <linearGradient id="tbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070b14"/>
+      <stop offset="1" stop-color="#0b1426"/>
+    </linearGradient>
+    <linearGradient id="tbar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0d1830"/>
+      <stop offset="1" stop-color="#101d38"/>
+    </linearGradient>
+    <filter id="tdrop" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+    <clipPath id="tl0"><rect x="52" y="84" width="0" height="28"><animate attributeName="width" from="0" to="542" begin="0.4s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="tl1"><rect x="52" y="118" width="0" height="28"><animate attributeName="width" from="0" to="308" begin="1.4500000000000002s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="tl2"><rect x="52" y="152" width="0" height="28"><animate attributeName="width" from="0" to="155" begin="2.5s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="tl3"><rect x="52" y="186" width="0" height="28"><animate attributeName="width" from="0" to="218" begin="3.5500000000000003s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="tl4"><rect x="52" y="220" width="0" height="28"><animate attributeName="width" from="0" to="317" begin="4.6000000000000005s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="tl5"><rect x="52" y="254" width="0" height="28"><animate attributeName="width" from="0" to="146" begin="5.65s;12.4s" dur="0.55s" fill="freeze"/></rect></clipPath><clipPath id="to1"><rect x="52" y="324" width="0" height="26"><animate attributeName="width" from="0" to="338" begin="7.7s;12.4s" dur="0.45s" fill="freeze"/></rect></clipPath><clipPath id="to2"><rect x="52" y="352" width="0" height="26"><animate attributeName="width" from="0" to="407" begin="8.2s;12.4s" dur="0.45s" fill="freeze"/></rect></clipPath>
+  </defs>
+  <rect width="900" height="430" fill="none"/>
+  <g filter="url(#tdrop)">
+    <rect x="24" y="22" width="852" height="386" rx="14" fill="url(#tbg)" stroke="#1b2c4b"/>
+    <path d="M 24 36 A 14 14 0 0 1 38 22 L 862 22 A 14 14 0 0 1 876 36 L 876 66 L 24 66 Z" fill="url(#tbar)"/>
+    <line x1="24" y1="66" x2="876" y2="66" stroke="#1b2c4b"/>
+    <circle cx="48" cy="44" r="6" fill="#ff5f57"/><circle cx="68" cy="44" r="6" fill="#febc2e"/><circle cx="88" cy="44" r="6" fill="#28c840"/>
+    <text x="450.0" y="49" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12" fill="#6b82a8">telegram-mcp — quick start</text>
+    <g clip-path="url(#tl0)"><text x="52" y="104" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#e2e8f0"><tspan fill="#7dd3fc">$ </tspan>git clone https://github.com/dikaglorya/telegram-mcp.git</text></g><g clip-path="url(#tl1)"><text x="52" y="138" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#e2e8f0"><tspan fill="#7dd3fc">$ </tspan>cd telegram-mcp &amp;&amp; npm install</text></g><g clip-path="url(#tl2)"><text x="52" y="172" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#e2e8f0"><tspan fill="#7dd3fc">$ </tspan>npm run build</text></g><g clip-path="url(#tl3)"><text x="52" y="206" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#e2e8f0"><tspan fill="#7dd3fc">$ </tspan>cp .env.example .env</text></g><g clip-path="url(#tl4)"><text x="52" y="240" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#64748b"><tspan fill="#475569"># </tspan>  put API_ID + API_HASH in .env</text></g><g clip-path="url(#tl5)"><text x="52" y="274" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14.5" fill="#e2e8f0"><tspan fill="#7dd3fc">$ </tspan>telegram-mcp</text></g><g clip-path="url(#to1)"><text x="52" y="344" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#34d399">✓ connected · 69 tools · session 0600</text></g><g clip-path="url(#to2)"><text x="52" y="372" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14" fill="#34d399">✓ login happens in chat — no terminal prompts</text></g>
+    <rect x="176" y="259" width="9" height="19" fill="#7dd3fc">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.45;0.5;0.9;1" dur="1.1s" repeatCount="indefinite"/>
+    </rect>
+    <line x1="24" y1="370" x2="876" y2="370" stroke="#13223d"/>
+    <text x="48" y="394" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#4d6488">node ≥ 20 · npm · one process · no server to host</text>
+    <circle cx="836" cy="388" r="4" fill="#22c55e">
+      <animate attributeName="opacity" values="0.25;1;0.25" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <text x="824" y="392" text-anchor="end" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11" fill="#6b82a8">live</text>
+  </g>
+</svg>

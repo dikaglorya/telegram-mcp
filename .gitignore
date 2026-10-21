@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# secrets — NEVER commit
+.env
+.env.*
+!.env.example
+state.json
+
+# telegram session + local state (live account credentials)
+*.session
+session.txt
+.telegram-mcp/
+
+# local media / downloads / logs
+media/
+exports/
+audit.log
+*.log
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# test artifacts and release builds
+.harness-journal.json
+*.tgz
+coverage/
+
+# release artifacts
+*.tgz

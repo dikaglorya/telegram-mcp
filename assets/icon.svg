@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="iconTitle iconDesc">
+  <title id="iconTitle">telegram-mcp icon</title>
+  <desc id="iconDesc">A paper plane inside a glowing hexagon, the server's mark.</desc>
+  <defs>
+    <linearGradient id="ibg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#060a14"/>
+      <stop offset="0.55" stop-color="#0a1223"/>
+      <stop offset="1" stop-color="#101c38"/>
+    </linearGradient>
+    <linearGradient id="iborder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="0.5" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="ihex" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5eead4">
+        <animate attributeName="stop-color" values="#5eead4;#60a5fa;#a78bfa;#5eead4" dur="9s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="1" stop-color="#a78bfa">
+        <animate attributeName="stop-color" values="#a78bfa;#5eead4;#60a5fa;#a78bfa" dur="9s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <linearGradient id="iwingA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e0f2fe"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
+    </linearGradient>
+    <linearGradient id="iwingB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="iwingC" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="iglowa" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#38bdf8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iglob" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="iblur" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="isoft" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="idrop" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.55"/>
+    </filter>
+    <clipPath id="iround"><rect x="16" y="16" width="480" height="480" rx="108"/></clipPath>
+    <path id="iorbit" d="M 106 340 C 150 416 372 420 424 312"/>
+  </defs>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#ibg)" stroke="url(#iborder)" stroke-width="3"/>
+  <g clip-path="url(#iround)">
+    <g stroke="#1e3a8a" stroke-opacity="0.16" stroke-width="1">
+      <path d="M16 96 H496 M16 160 H496 M16 224 H496 M16 288 H496 M16 352 H496 M16 416 H496"/>
+      <path d="M96 16 V496 M160 16 V496 M224 16 V496 M288 16 V496 M352 16 V496 M416 16 V496"/>
+    </g>
+    <circle cx="330" cy="180" r="190" fill="url(#iglowa)">
+      <animate attributeName="opacity" values="0.7;1;0.7" dur="6s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="150" cy="360" r="170" fill="url(#iglob)">
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- outer orbit ring -->
+  <g transform="rotate(-18 256 256)">
+    <polygon points="256,46 438,151 438,361 256,466 74,361 74,151" fill="none" stroke="#38bdf8" stroke-opacity="0.28" stroke-width="2" stroke-dasharray="9 15">
+      <animateTransform attributeName="transform" type="rotate" values="0 256 256;360 256 256" dur="40s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+
+  <!-- inner hexagon -->
+  <g filter="url(#idrop)">
+    <polygon points="256,88 402,172 402,340 256,424 110,340 110,172" fill="#0b1730" fill-opacity="0.55" stroke="url(#ihex)" stroke-width="7" stroke-linejoin="round">
+      <animate attributeName="stroke-opacity" values="0.75;1;0.75" dur="4.5s" repeatCount="indefinite"/>
+    </polygon>
+  </g>
+  <polygon points="256,112 382,184 382,328 256,400 130,328 130,184" fill="none" stroke="#60a5fa" stroke-opacity="0.14" stroke-width="1.5"/>
+
+  <!-- orbit trail -->
+  <g fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-dasharray="2 10" opacity="0.55">
+    <use href="#iorbit" xlink:href="#iorbit"/>
+  </g>
+  <circle r="4" fill="#e0f2fe">
+    <animateMotion dur="7s" repeatCount="indefinite" rotate="auto">
+      <mpath href="#iorbit" xlink:href="#iorbit"/>
+    </animateMotion>
+    <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="7s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- paper plane -->
+  <g filter="url(#idrop)">
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="5.5s" repeatCount="indefinite"/>
+      <ellipse cx="258" cy="330" rx="96" ry="18" fill="#020617" opacity="0.45" filter="url(#isoft)"/>
+      <path d="M350 150 L170 240 L250 265 L235 330 L275 285 L315 255 Z" fill="#0b1730" opacity="0.35"/>
+      <path d="M350 150 L170 240 L250 265 Z" fill="url(#iwingA)"/>
+      <path d="M350 150 L250 265 L315 255 Z" fill="url(#iwingB)"/>
+      <path d="M250 265 L235 330 L275 285 Z" fill="url(#iwingC)"/>
+      <path d="M350 150 L250 265" stroke="#e0f2fe" stroke-opacity="0.85" stroke-width="2"/>
+      <path d="M250 265 L275 285" stroke="#c4b5fd" stroke-opacity="0.6" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- trailing sparks -->
+  <g fill="#7dd3fc">
+    <circle cx="168" cy="296" r="3.2"><animate attributeName="opacity" values="0;0.8;0" dur="2.4s" repeatCount="indefinite"/></circle>
+    <circle cx="150" cy="318" r="2.4"><animate attributeName="opacity" values="0;0.6;0" dur="2.4s" begin="0.4s" repeatCount="indefinite"/></circle>
+    <circle cx="138" cy="342" r="1.8"><animate attributeName="opacity" values="0;0.4;0" dur="2.4s" begin="0.8s" repeatCount="indefinite"/></circle>
+  </g>
+
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="none" stroke="#e0f2fe" stroke-opacity="0.08" stroke-width="1"/>
+</svg>

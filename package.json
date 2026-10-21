@@ -1,0 +1,69 @@
+{
+  "name": "telegram-mcp",
+  "version": "1.0.0",
+  "description": "Local MCP server that connects AI CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
+  "type": "module",
+  "bin": {
+    "telegram-mcp": "bin/telegram-mcp.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "npm run build",
+    "dev": "tsx index.ts",
+    "start": "node dist/index.js",
+    "login": "tsx cli/login.ts",
+    "doctor": "tsx cli/doctor.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "login:force": "tsx cli/login.ts --force",
+    "test": "npm run build && node harness/unit.mjs",
+    "test:unit": "node harness/unit.mjs",
+    "test:mcp": "node harness/mcp-harness.mjs",
+    "test:mcp:write": "node harness/mcp-harness.mjs --write",
+    "test:all": "npm run build && node harness/unit.mjs && node harness/mcp-harness.mjs --write",
+    "test:destructive": "npm run build && node harness/mcp-harness.mjs --all",
+    "cleanup": "node harness/mcp-harness.mjs --cleanup",
+    "login:flow": "node harness/login-flow.mjs",
+    "test:login": "node harness/login-flow.mjs",
+    "test:policy": "node harness/mcp-harness.mjs --policy",
+    "test:reclaim": "node harness/mcp-harness.mjs --reclaim"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "telegram",
+    "mtproto",
+    "gramjs",
+    "opencode",
+    "codex",
+    "claude-code"
+  ],
+  "author": "dikaglorya (https://github.com/dikaglorya)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dikaglorya/telegram-mcp.git"
+  },
+  "homepage": "https://github.com/dikaglorya/telegram-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/dikaglorya/telegram-mcp/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "dotenv": "^18.0.8",
+    "telegram": "^2.26.22",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}

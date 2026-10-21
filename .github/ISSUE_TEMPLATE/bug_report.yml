@@ -1,0 +1,121 @@
+name: Bug report
+description: A tool failed, returned the wrong result, or the server would not start.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this.
+
+        **Do not paste an `api_hash`, a session string, a login code, a 2FA
+        password, your phone number, or private message content.** Redact chat
+        ids and usernames too if the chat is private.
+
+        Security problems (secret leakage, allowlist bypass, path traversal)
+        must go through the private flow instead:
+        [Report a vulnerability](https://github.com/dikaglorya/telegram-mcp/security/advisories/new).
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag, or the output of `git rev-parse --short HEAD`.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - npx github:dikaglorya/telegram-mcp
+        - Release tarball (npm install -g)
+        - Cloned repository
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      description: The app or CLI that starts the server.
+      placeholder: "OpenCode 0.15, Claude Code, Codex CLI, Cursor, ..."
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and Node.js version
+      placeholder: "macOS 15.1, Node 22.9.0"
+    validations:
+      required: true
+
+  - type: input
+    id: tool
+    attributes:
+      label: Tool involved
+      description: Leave empty if the server does not start.
+      placeholder: "telegram_send_message"
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The actual result, including the error code and message if there is one.
+      placeholder: |
+        Called telegram_send_message with chat=@example and text=hello.
+        Got: [FLOOD_WAIT] retryAfterSec=42
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest sequence that shows the problem. Remove secrets first.
+      placeholder: |
+        1. Start the server with ...
+        2. Call telegram_... with ...
+        3. See ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Doctor output
+      description: |
+        Paste the result of `telegram_doctor` (or `npm run doctor`), with the
+        account id, username, phone and any path that contains your real name
+        replaced by `REDACTED`.
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: |
+        The MCP client's server log is more useful than a screenshot. Remove
+        secrets, phone numbers and message text before pasting.
+      render: shell
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I removed every secret and private message from this report.
+          required: true

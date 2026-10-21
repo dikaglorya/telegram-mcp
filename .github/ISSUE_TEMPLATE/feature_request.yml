@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest a tool, a behaviour change, or a client integration.
+title: "[feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are welcome. The most useful ones describe the task you
+        are trying to finish, not only the API call you want wrapped.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The task or workflow, and where the current 69 tools stop short.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the server to do?
+      description: A tool name, an argument shape, or a behaviour. Rough is fine.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - New tool
+        - Change to an existing tool
+        - Client integration or install
+        - Documentation
+        - Performance or reliability
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Existing tools, scripts, or another MCP server.
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: This request does not contain secrets or private message content.
+          required: true

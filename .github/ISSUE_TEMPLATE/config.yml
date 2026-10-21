@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/dikaglorya/telegram-mcp/security/advisories/new
+    about: Private report for secret leakage, allowlist bypass, path traversal or session bugs. Never open a public issue for these.
+  - name: Setup and usage questions
+    url: https://github.com/dikaglorya/telegram-mcp#troubleshooting
+    about: Credentials, first login, client config and common error codes are covered in the README.

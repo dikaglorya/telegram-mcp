@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icon.svg" width="116" height="116" alt="telegram-mcp icon">
+  <img src="https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/icon.svg" width="116" height="116" alt="telegram-mcp icon">
 </p>
 
 <h1 align="center">telegram-mcp</h1>
@@ -10,7 +10,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dikaglorya/telegram-mcp/releases"><img alt="version" src="https://img.shields.io/badge/version-1.0.0-5eead4?style=flat-square"></a>
+  <a href="https://www.npmjs.com/package/@dikacode/telegram-mcp"><img alt="npm" src="https://img.shields.io/npm/v/@dikacode/telegram-mcp?style=flat-square&color=5eead4&label=npm"></a>
+  <a href="https://www.npmjs.com/package/@dikacode/telegram-mcp"><img alt="downloads" src="https://img.shields.io/npm/dm/@dikacode/telegram-mcp?style=flat-square&color=38bdf8"></a>
   <a href="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/dikaglorya/telegram-mcp/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="node" src="https://img.shields.io/badge/node-%E2%89%A5%2020-0ea5e9?style=flat-square">
   <img alt="tools" src="https://img.shields.io/badge/tools-69-a78bfa?style=flat-square">
@@ -20,7 +21,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/hero.svg" width="100%" alt="Animated banner: a floating isometric server stack with an orbiting paper plane over a perspective grid">
+  <img src="https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/hero.svg" width="100%" alt="Animated banner: a floating isometric server stack with an orbiting paper plane over a perspective grid">
 </p>
 
 ---
@@ -41,14 +42,23 @@ Most Telegram integrations give a bot a token. A bot only sees the chats it was 
 | Transport | **stdio** (Model Context Protocol) |
 | Telegram API | **MTProto**, through [GramJS](https://github.com/gram-js/gramjs) |
 | Runtime | **Node.js ≥ 20** |
+| Package | **`@dikacode/telegram-mcp`** on npm |
 | State | `~/.telegram-mcp/` — session file `0600`, state dir `0700` |
 | Network | outbound to Telegram only; **no inbound port** |
 
 ## Quick start
 
 <p align="center">
-  <img src="assets/terminal.svg" width="100%" alt="Animated terminal: clone the repository, install, add credentials, and start the server">
+  <img src="https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/terminal.svg" width="100%" alt="Animated terminal: clone the repository, install, add credentials, and start the server">
 </p>
+
+```bash
+npx -y @dikacode/telegram-mcp
+```
+
+That starts the server on stdio. In normal use you don't run it by hand: your MCP client spawns it. Add the server with one of the snippets in [Connect your agent](#connect-your-agent), restart the client, then ask the agent to log in.
+
+If you would rather run from a checkout:
 
 ```bash
 git clone https://github.com/dikaglorya/telegram-mcp.git
@@ -60,9 +70,7 @@ cp .env.example .env
 npm start
 ```
 
-The server speaks MCP over stdio, so in normal use your MCP client starts it for you — the last command is only for a manual check. Add the server to your client with the snippets in [Connect your agent](#connect-your-agent), then ask the agent to log in. The code and the two-step password are typed in chat, never in a terminal.
-
-No checkout? `npx -y github:dikaglorya/telegram-mcp` fetches, builds and runs the same server from a temporary install.
+The server speaks MCP over stdio, so the last command is only a manual check. The code and the two-step password are typed in chat, never in a terminal.
 
 ## Contents
 
@@ -80,6 +88,7 @@ No checkout? `npx -y github:dikaglorya/telegram-mcp` fetches, builds and runs th
 - [Development](#development)
 - [Project layout](#project-layout)
 - [Release](#release)
+- [Reporting a bug](#reporting-a-bug)
 - [Contributing](#contributing)
 - [License](#license)
 - [Contributors](#contributors)
@@ -87,7 +96,7 @@ No checkout? `npx -y github:dikaglorya/telegram-mcp` fetches, builds and runs th
 ## Architecture
 
 <p align="center">
-  <img src="assets/flow.svg" width="100%" alt="Animated diagram: agent to MCP server over JSON-RPC/stdio, MCP server to Telegram over MTProto">
+  <img src="https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/flow.svg" width="100%" alt="Animated diagram: agent to MCP server over JSON-RPC/stdio, MCP server to Telegram over MTProto">
 </p>
 
 The agent spawns `telegram-mcp` as a child process and speaks JSON-RPC over stdin/stdout. The server holds one MTProto connection, signs in with a saved session, and translates each tool call into Telegram API requests. Nothing is exposed to the network: if the agent is not running, the server is not running.
@@ -115,28 +124,37 @@ Two properties are deliberate:
 
 ## Install
 
-Pick one path. All four end with a `telegram-mcp` process that speaks MCP over stdio.
+Pick one path. All of them end with a `telegram-mcp` process that speaks MCP over stdio.
 
-### 1. Run straight from GitHub with `npx`
+### 1. From npm
 
-No clone, no global install. npm fetches the repository, installs dependencies, builds it, and runs the launcher.
+The package ships compiled JavaScript, so there is no build step and no compiler on your machine.
 
 ```bash
-npx -y github:dikaglorya/telegram-mcp
+npx -y @dikacode/telegram-mcp
 ```
 
-The first run takes a minute because it compiles TypeScript. Later runs reuse the npm cache. This is also the shortest command to put in an MCP client config:
+Or install it once, globally:
+
+```bash
+npm install -g @dikacode/telegram-mcp
+telegram-mcp
+```
+
+`npx` is the shortest thing to put in an MCP client config:
 
 ```json
 {
   "command": "npx",
-  "args": ["-y", "github:dikaglorya/telegram-mcp"]
+  "args": ["-y", "@dikacode/telegram-mcp"]
 }
 ```
 
+Pin a version if you want reproducible installs: `npx -y @dikacode/telegram-mcp@1.0.0`.
+
 ### 2. Clone and link
 
-Best if you want to read the code, pin a version, or modify a tool.
+Best if you want to read the code, pin a commit, or modify a tool.
 
 ```bash
 git clone https://github.com/dikaglorya/telegram-mcp.git
@@ -152,21 +170,21 @@ npm link             # optional: makes `telegram-mcp` available on PATH
 Download the tarball attached to the latest release and install it globally:
 
 ```bash
-npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.0/telegram-mcp-1.0.0.tgz
+npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.0/dikacode-telegram-mcp-1.0.0.tgz
 telegram-mcp
 ```
 
 The release tarball already contains the compiled `dist/`, so no build step is needed.
 
-### 4. Build your own tarball
+### 4. Unreleased commit from GitHub
+
+Useful when you want a fix that has landed on `main` but is not in an npm release yet.
 
 ```bash
-git clone https://github.com/dikaglorya/telegram-mcp.git
-cd telegram-mcp
-npm install
-npm pack             # writes telegram-mcp-1.0.0.tgz
-npm install -g ./telegram-mcp-1.0.0.tgz
+npx -y github:dikaglorya/telegram-mcp
 ```
+
+npm fetches the repository, installs dependencies, runs the `prepare` build, and starts the launcher.
 
 ## Credentials
 
@@ -215,7 +233,7 @@ The server is the same in every client; only the wrapper differs. Use the `npx` 
   "mcp": {
     "telegram": {
       "type": "local",
-      "command": ["npx", "-y", "github:dikaglorya/telegram-mcp"],
+      "command": ["npx", "-y", "@dikacode/telegram-mcp"],
       "environment": {
         "TELEGRAM_API_ID": "1234567",
         "TELEGRAM_API_HASH": "0123456789abcdef0123456789abcdef"
@@ -232,7 +250,7 @@ The server is the same in every client; only the wrapper differs. Use the `npx` 
 claude mcp add telegram \
   -e TELEGRAM_API_ID=1234567 \
   -e TELEGRAM_API_HASH=0123456789abcdef0123456789abcdef \
-  -- npx -y github:dikaglorya/telegram-mcp
+  -- npx -y @dikacode/telegram-mcp
 ```
 
 Or commit a project-scoped `.mcp.json`:
@@ -242,7 +260,7 @@ Or commit a project-scoped `.mcp.json`:
   "mcpServers": {
     "telegram": {
       "command": "npx",
-      "args": ["-y", "github:dikaglorya/telegram-mcp"],
+      "args": ["-y", "@dikacode/telegram-mcp"],
       "env": {
         "TELEGRAM_API_ID": "1234567",
         "TELEGRAM_API_HASH": "0123456789abcdef0123456789abcdef"
@@ -259,7 +277,7 @@ Or commit a project-scoped `.mcp.json`:
 ```toml
 [mcp_servers.telegram]
 command = "npx"
-args = ["-y", "github:dikaglorya/telegram-mcp"]
+args = ["-y", "@dikacode/telegram-mcp"]
 
 [mcp_servers.telegram.env]
 TELEGRAM_API_ID = "1234567"
@@ -275,7 +293,7 @@ TELEGRAM_API_HASH = "0123456789abcdef0123456789abcdef"
   "mcpServers": {
     "telegram": {
       "command": "npx",
-      "args": ["-y", "github:dikaglorya/telegram-mcp"],
+      "args": ["-y", "@dikacode/telegram-mcp"],
       "env": {
         "TELEGRAM_API_ID": "1234567",
         "TELEGRAM_API_HASH": "0123456789abcdef0123456789abcdef"
@@ -302,7 +320,7 @@ Use the same `mcpServers` JSON as above, then restart the app.
 The contract is small: spawn a process, speak MCP JSON-RPC over stdio, pass the two environment variables. If your client supports stdio MCP servers, it supports this one.
 
 <p align="center">
-  <img src="assets/divider.svg" width="100%" alt="">
+  <img src="https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/divider.svg" width="100%" alt="">
 </p>
 
 ## Tools
@@ -548,7 +566,21 @@ The TypeScript is built with `tsc` to `dist/`. There is no bundler; the publishe
 - Cross-platform launcher; no hardcoded paths.
 - End-to-end harness with paging, policy probes and artifact cleanup.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release notes. Release artifacts are on the [releases page](https://github.com/dikaglorya/telegram-mcp/releases).
+See [CHANGELOG.md](https://github.com/dikaglorya/telegram-mcp/blob/main/CHANGELOG.md) for the full release notes. Release artifacts are on the [releases page](https://github.com/dikaglorya/telegram-mcp/releases).
+
+## Reporting a bug
+
+Open an issue here: **https://github.com/dikaglorya/telegram-mcp/issues/new/choose**
+
+You get two forms — *Bug report* and *Feature request*. The bug form asks for the version, install path, MCP client, OS, the tool involved, the error code, steps to reproduce, and `telegram_doctor` output. That is enough to reproduce most failures without a round trip.
+
+If the server will not start at all, say so and paste the client's server log; the launcher prints one line explaining what is missing before it starts serving.
+
+**What not to put in an issue.** Never include an `api_hash`, a session string, a login code, a 2FA password, your phone number, or the text of a private message. Chat ids and usernames of private chats should be redacted too. An issue is public and indexed the moment you submit it.
+
+**Security problems go private.** Secret leakage, allowlist bypass, path traversal, session handling bugs, or a write tool that reports success without changing anything should go through GitHub's private advisory flow: **Security → Advisories → Report a vulnerability** (direct link: https://github.com/dikaglorya/telegram-mcp/security/advisories/new). That flow is enabled on this repository. [SECURITY.md](SECURITY.md) lists what is in scope and what is not — `FLOOD_WAIT` and account restrictions from automated behaviour are Telegram's, not vulnerabilities.
+
+**Before you report**, the [troubleshooting table](#troubleshooting) already covers `NOT_AUTHORIZED`, `FLOOD_WAIT`, `AUTH_KEY_DUPLICATED`, `CHAT_ADMIN_REQUIRED`, `PREMIUM_ACCOUNT_REQUIRED`, a missing `TELEGRAM_API_ID`, and a missing `dist/`. A quick `telegram_doctor` call answers most "it will not connect" reports in one shot.
 
 ## Contributing
 
@@ -570,11 +602,11 @@ Guidelines:
 - Do not add a dependency when the standard library or an existing dependency already does the job.
 - Match the surrounding style: two-space indent, explicit types at module boundaries, comments that explain *why*.
 
-For a security issue, follow [SECURITY.md](SECURITY.md). Do not open a public issue containing a session string, an api_hash or private message content.
+For a security issue, follow [SECURITY.md](https://github.com/dikaglorya/telegram-mcp/blob/main/SECURITY.md). Do not open a public issue containing a session string, an api_hash or private message content.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](https://github.com/dikaglorya/telegram-mcp/blob/main/LICENSE).
 
 ## Contributors
 
@@ -583,4 +615,4 @@ MIT — see [LICENSE](LICENSE).
 | [dikaglorya](https://github.com/dikaglorya) | creator and maintainer |
 | *you* | contributions welcome |
 
-See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the canonical list. Contributions are credited in the release notes for the version that includes them.
+See [CONTRIBUTORS.md](https://github.com/dikaglorya/telegram-mcp/blob/main/CONTRIBUTORS.md) for the canonical list. Contributions are credited in the release notes for the version that includes them.

@@ -12,8 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import { lockDir, lockFile } from "./perms.js";
 
-export const SERVER_NAME = "telegram-mcp";
-export const SERVER_VERSION = "1.0.0";
+export { SERVER_NAME, SERVER_VERSION } from "./version.js";
 
 export class ConfigError extends Error {
   constructor(message: string) {

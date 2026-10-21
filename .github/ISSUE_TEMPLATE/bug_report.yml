@@ -20,8 +20,8 @@ body:
     id: version
     attributes:
       label: Version
-      description: Release tag, or the output of `git rev-parse --short HEAD`.
-      placeholder: "1.0.0"
+      description: Output of `telegram-mcp --version` (1.0.1+), or the release tag / `git rev-parse --short HEAD`.
+      placeholder: "1.0.1"
     validations:
       required: true
 
@@ -30,7 +30,8 @@ body:
     attributes:
       label: How did you install it?
       options:
-        - npx @dikacode/telegram-mcp
+        - npx -y @dikacode/telegram-mcp
+        - npm install -g @dikacode/telegram-mcp
         - Release tarball (npm install -g)
         - Cloned repository
         - Other

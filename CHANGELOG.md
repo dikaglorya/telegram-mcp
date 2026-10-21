@@ -4,6 +4,40 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] — 2026-10-21
+
+Update path made explicit. `1.0.0` could only be updated by knowing npm's
+commands by heart: there was no way to ask the installed copy its version, and
+no signal that a newer release existed.
+
+### Added
+
+- **`--version` / `-v`** prints the version and exits, before the stdio
+  transport is created. **`--help` / `-h`** prints usage, setup steps and the
+  upgrade commands. Both answer on stdout; an MCP session is never started.
+  Any other argument still falls through to serving, so a client that passes
+  its own flags cannot break the server.
+- **Update notice.** After the transport is live, the server asks the registry
+  for `dist-tags.latest` and prints one line to stderr when a newer version
+  exists, naming the exact upgrade command for the install type in use. The
+  request has an 800 ms timeout, is cached for 24 hours under the state dir,
+  never blocks startup, and never touches stdout.
+- **`TELEGRAM_UPDATE_CHECK`** (`0`/`false`/`no`/`off` disables the lookup) and
+  **`TELEGRAM_UPDATE_CHECK_TIMEOUT_MS`** (capped at 10 s).
+- **`telegram_doctor` reports the installed version**, and the version of the
+  newest release it knows about from the cache. Informational only: an
+  available update never flips `healthy` to `false`.
+
+### Changed
+
+- The version now comes from `package.json` at runtime instead of a hand-kept
+  constant, so `serverInfo`, `--version` and the published tarball cannot drift
+  apart.
+
+### Fixed
+
+- Nothing in `1.0.0` is known to be broken; this release is additive.
+
 ## [1.0.0] — 2026-10-21
 
 First public release. A local MCP server for a personal Telegram account, with

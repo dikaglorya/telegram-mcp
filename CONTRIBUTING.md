@@ -81,6 +81,60 @@ current layer. Page the history and delete in batches with
 channels.DeleteMessages instead.
 ```
 
+## Releasing
+
+Versions are immutable on npm: once `1.0.1` is published it cannot be replaced,
+so a bad README means a new patch version. Do the work in this order.
+
+1. Bump the version and move the changelog entry out of `Unreleased`:
+
+   ```bash
+   npm version patch --no-git-tag-version   # or minor / major
+   ```
+
+   `package.json` is the source of truth — `serverInfo`, `telegram-mcp --version`
+   and the update notice all read it at runtime, so nothing else needs editing.
+
+2. Run the full local gate:
+
+   ```bash
+   npm run typecheck
+   npm run build
+   npm run test:unit
+   ```
+
+3. Inspect the artifact before it leaves the machine:
+
+   ```bash
+   npm pack --dry-run
+   ```
+
+   The tarball must contain `bin/`, `dist/`, `README.md`, `LICENSE` and
+   `package.json`, and nothing else. `files` in `package.json` controls this.
+
+4. Publish, then verify from a clean cache rather than trusting the exit code:
+
+   ```bash
+   npm publish
+   npx --cache "$(mktemp -d)" -y @dikacode/telegram-mcp@latest
+   ```
+
+   The server must answer `tools/list` with the expected tool count. The account
+   needs 2FA or a granular token with *bypass 2FA* enabled to publish.
+
+5. Tag and release. The tag must point at the commit the tarball was built from:
+
+   ```bash
+   git tag -a v1.0.1 -m "@dikacode/telegram-mcp 1.0.1"
+   git push origin main --follow-tags
+   gh release create v1.0.1 --notes-file notes.md
+   gh release upload v1.0.1 dikacode-telegram-mcp-1.0.1.tgz{,.sha256}
+   ```
+
+   Keep the release notes and the README pointing at the same scoped name and
+   version. A release whose source tarball has a different `package.json` name
+   than the published package is a bug.
+
 ## What not to commit
 
 `.env`, session files, `state.json`, `audit.log`, `media/`, `exports/`, `dist/`, `node_modules/`, and anything containing someone's phone number, chat id or private message content.

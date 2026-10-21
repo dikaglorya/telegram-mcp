@@ -24,6 +24,8 @@ import { getClient } from "./telegram.js";
 import { lockFile } from "./perms.js";
 import { normalizeError } from "./errors.js";
 import { ok, guard } from "./util.js";
+import { PACKAGE_NAME, SERVER_VERSION } from "./version.js";
+import { getUpdateInfo } from "./update-check.js";
 
 /** One line of the doctor report. */
 type Check = { name: string; pass: boolean; detail: string };
@@ -146,10 +148,11 @@ export function registerSetupTools(server: McpServer): void {
     {
       title: "Telegram health check",
       description:
-        "Read-only health check: config, state dir, session presence, session file permissions " +
-        "(auto-repaired to 0600), and live authorization. Returns { healthy, checks[], account }. " +
+        "Read-only health check: config, installed version, state dir, session presence, session file " +
+        "permissions (auto-repaired to 0600), and live authorization. Returns { healthy, checks[], account }. " +
         "A missing or unauthorized session is reported as a failed check, not an error — call " +
-        "telegram_login_start to fix it. Never returns the api_hash or the session string.",
+        "telegram_login_start to fix it. An available update is informational and never fails the check. " +
+        "Never returns the api_hash or the session string.",
       inputSchema: {},
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
@@ -169,6 +172,23 @@ export function registerSetupTools(server: McpServer): void {
           });
         } catch (err) {
           checks.push({ name: "config", pass: false, detail: normalizeError(err).message });
+        }
+
+        // 2. version — always informational, never a failure. An available
+        //    update is not a health problem, so it must not flip `healthy` to
+        //    false and send an agent chasing a working install. Cache-only:
+        //    a health check must not wait on the network.
+        try {
+          const info = await getUpdateInfo({ allowNetwork: false });
+          checks.push({
+            name: "version",
+            pass: true,
+            detail: info.updateAvailable
+              ? `${info.current} (${info.latest} available — \`npm install -g ${PACKAGE_NAME}@latest\`)`
+              : `${info.current} (latest known)`,
+          });
+        } catch {
+          checks.push({ name: "version", pass: true, detail: SERVER_VERSION });
         }
 
         if (!config) {

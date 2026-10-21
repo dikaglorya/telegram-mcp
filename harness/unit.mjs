@@ -1214,8 +1214,134 @@ check("a send that produced no message id is not a delivery", () => {
   return "no send tool reports a delivery it cannot name";
 });
 
-const failed = results.filter((r) => r.status === "FAIL");
-for (const r of results) {
+check("version: compareVersions orders releases, patches and prereleases", async () => {
+  const { compareVersions } = await load("dist/version.js");
+  const cases = [
+    ["1.0.1", "1.0.0", 1],
+    ["1.0.0", "1.0.1", -1],
+    ["1.0.0", "1.0.0", 0],
+    ["v1.2.0", "1.10.0", -1],
+    ["1.10.0", "1.9.9", 1],
+    ["2.0.0", "1.99.99", 1],
+    ["1.0.0", "1.0.0-beta.1", 1], // a release outranks its own prerelease
+    ["1.0.0-beta.1", "1.0.0", -1],
+    ["1.0.0-beta.2", "1.0.0-beta.1", 1],
+    ["1.0.0+build.5", "1.0.0", 0], // build metadata is ignored
+  ];
+  for (const [a, b, want] of cases) {
+    const got = compareVersions(a, b);
+    if (got !== want) throw new Error(`compare(${a}, ${b}) = ${got}, want ${want}`);
+  }
+  return `${cases.length} orderings`;
+});
+
+check("version: SERVER_VERSION matches package.json, so serverInfo cannot drift", async () => {
+  const { SERVER_VERSION } = await load("dist/version.js");
+  const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  if (SERVER_VERSION !== pkg.version) {
+    throw new Error(`dist says ${SERVER_VERSION}, package.json says ${pkg.version}`);
+  }
+  return SERVER_VERSION;
+});
+
+check("update: TELEGRAM_UPDATE_CHECK=0 disables the registry lookup", async () => {
+  const { getUpdateInfo } = await load("dist/update-check.js");
+  const before = process.env.TELEGRAM_UPDATE_CHECK;
+  process.env.TELEGRAM_UPDATE_CHECK = "0";
+  try {
+    const info = await getUpdateInfo();
+    if (info.source !== "disabled") throw new Error(`source=${info.source}`);
+    if (info.updateAvailable) throw new Error("reported an update while disabled");
+    return "no outbound request";
+  } finally {
+    if (before === undefined) delete process.env.TELEGRAM_UPDATE_CHECK;
+    else process.env.TELEGRAM_UPDATE_CHECK = before;
+  }
+});
+
+check("update: a stale cache is ignored, a fresh one is not", async () => {
+  const { getUpdateInfo } = await load("dist/update-check.js");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "tgmcp-upd-"));
+  const file = path.join(dir, "update-check.json");
+  const before = { dir: process.env.TELEGRAM_STATE_DIR, off: process.env.TELEGRAM_UPDATE_CHECK };
+  process.env.TELEGRAM_STATE_DIR = dir;
+  delete process.env.TELEGRAM_UPDATE_CHECK;
+  try {
+    // Fresh cache: answered from disk, no network, and the notice is actionable.
+    fs.writeFileSync(file, JSON.stringify({ checkedAt: new Date().toISOString(), latest: "9.9.9" }));
+    const fresh = await getUpdateInfo({ allowNetwork: false });
+    if (fresh.source !== "cache") throw new Error(`fresh source=${fresh.source}`);
+    if (fresh.latest !== "9.9.9") throw new Error(`fresh latest=${fresh.latest}`);
+    if (!fresh.updateAvailable) throw new Error("a 9.9.9 cache did not read as an available update");
+
+    // Stale cache: must not be trusted, and offline mode must not invent a version.
+    const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    fs.writeFileSync(file, JSON.stringify({ checkedAt: old, latest: "9.9.9" }));
+    const stale = await getUpdateInfo({ allowNetwork: false });
+    if (stale.source === "cache") throw new Error("used a 40-day-old cache");
+    if (stale.updateAvailable) throw new Error("reported an update from a stale cache");
+    return "24h TTL enforced";
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+    if (before.dir === undefined) delete process.env.TELEGRAM_STATE_DIR;
+    else process.env.TELEGRAM_STATE_DIR = before.dir;
+    if (before.off === undefined) delete process.env.TELEGRAM_UPDATE_CHECK;
+    else process.env.TELEGRAM_UPDATE_CHECK = before.off;
+  }
+});
+
+check("update: the notice names a command the user can actually run", async () => {
+  const { formatNotice } = await load("dist/update-check.js");
+  const line = formatNotice({ current: "1.0.0", latest: "1.0.1", updateAvailable: true, source: "cache" });
+  if (!line.includes("1.0.0 -> 1.0.1")) throw new Error(`no version transition in: ${line}`);
+  if (!line.includes("TELEGRAM_UPDATE_CHECK=0")) throw new Error("the notice offers no way to opt out");
+  if (!/npx -y @dikacode\/telegram-mcp@latest|npm install -g @dikacode\/telegram-mcp@latest/.test(line)) {
+    throw new Error(`no upgrade command in: ${line}`);
+  }
+  // stderr only: a line on stdout would corrupt the JSON-RPC stream.
+  if (!line.endsWith("\n")) throw new Error("notice is not newline-terminated");
+  return line.trim();
+});
+
+check("cli: --version and --help answer before the transport starts", async () => {
+  const { spawnSync } = await import("node:child_process");
+  for (const flag of ["--version", "-v"]) {
+    const out = spawnSync(process.execPath, [path.join(root, "dist", "index.js"), flag], {
+      encoding: "utf8",
+      timeout: 20_000,
+      env: { ...process.env, TELEGRAM_UPDATE_CHECK: "0" },
+    });
+    if (out.status !== 0) throw new Error(`${flag} exited ${out.status}: ${out.stderr}`);
+    const pkg = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+    if (out.stdout.trim() !== pkg.version) throw new Error(`${flag} printed "${out.stdout.trim()}"`);
+    // Nothing on stdout but the version: a server that booted would emit JSON-RPC.
+    if (out.stdout.includes("{")) throw new Error(`${flag} started the server`);
+  }
+  const help = spawnSync(process.execPath, [path.join(root, "dist", "index.js"), "--help"], {
+    encoding: "utf8",
+    timeout: 20_000,
+    env: { ...process.env, TELEGRAM_UPDATE_CHECK: "0" },
+  });
+  if (help.status !== 0) throw new Error(`--help exited ${help.status}: ${help.stderr}`);
+  for (const needle of ["Usage:", "--version", "npm install -g"]) {
+    if (!help.stdout.includes(needle)) throw new Error(`--help is missing "${needle}"`);
+  }
+  return "3 flags, no transport";
+});
+
+check("cli: an unknown flag still boots the server (MCP clients pass none)", async () => {
+  // Guard against the flag parser swallowing a client's arguments: only the
+  // four known flags exit, everything else must fall through to serving.
+  const src = fs.readFileSync(path.join(root, "index.ts"), "utf8");
+  const flags = src.match(/flags\.has\("(-{1,2}[a-z]+)"\)/g) ?? [];
+  if (flags.length !== 4) throw new Error(`expected 4 known flags, found ${flags.length}`);
+  if (/process\.exit\(/.test(src.slice(src.indexOf("function handleCliFlags"), src.indexOf("async function main")))) {
+    throw new Error("handleCliFlags calls process.exit, which would kill a real session");
+  }
+  return "only --version/-v/--help/-h short-circuit";
+});
+
+const failed = results.filter((r) => r.status === "FAIL");for (const r of results) {
   const icon = r.status === "PASS" ? "✅" : "❌";
   console.log(`${icon} ${r.name}${r.detail ? ` — ${r.detail}` : ""}`);
 }

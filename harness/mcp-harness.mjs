@@ -203,6 +203,10 @@ class McpClient {
       env: {
         ...process.env,
         TELEGRAM_FLOOD_WAIT_MAX: process.env.TELEGRAM_FLOOD_WAIT_MAX ?? "0",
+        // The suite must stay offline and deterministic: the startup update
+        // check would otherwise reach the registry and add stderr noise that a
+        // scenario asserting on logs could trip over.
+        TELEGRAM_UPDATE_CHECK: process.env.TELEGRAM_UPDATE_CHECK ?? "0",
         ...this.extraEnv,
       },
     });

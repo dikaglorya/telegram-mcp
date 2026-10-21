@@ -176,6 +176,8 @@ You don't have to run a login command or answer a terminal prompt. The server st
 
 `telegram_login_cancel` abandons a half-finished login and forgets the code. Login codes and 2FA passwords are stripped from the audit log before they are written.
 
+> The server holds a code or password only for the duration of one call, but the agent's chat transcript is outside this project's control. If you would rather not put a 2FA password in that transcript, run `npm run login` in a terminal instead.
+
 > **Windows:** the session still lives under your user profile. NTFS inherits the profile ACL; the POSIX `0600` call is a documented no-op.
 
 ## Connect your agent

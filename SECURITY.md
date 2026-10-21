@@ -31,6 +31,15 @@ Out of scope:
 - issues that require an already-compromised host
 - rate limits (`FLOOD_WAIT`) — those are Telegram's, not a vulnerability
 
+## Login material
+
+The login tools accept a Telegram code or a two-step password. The server keeps
+either value in memory for one call, never writes it to the session, state or
+audit log, and does not return it in tool output. The agent's own conversation
+transcript is outside the server's control. If that matters for your threat
+model, run `npm run login` in a terminal instead of typing the password into a
+chat.
+
 ## Handling secrets
 
 If you accidentally expose an `api_hash`, a session string or a phone number, revoke the session in Telegram (Settings → Devices) and rotate the credentials at <https://my.telegram.org/apps>. Deleting the commit is not enough; the value has already been copied.

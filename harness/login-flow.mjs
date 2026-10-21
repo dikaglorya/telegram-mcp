@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Interactive login flow over MCP — the same path an AI agent uses.
+ * Interactive login flow over MCP — the same path an agent uses.
  *
  * Proves the "no terminal, no manual commands" promise end to end:
  *   1. start the built server and do the MCP handshake

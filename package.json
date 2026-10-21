@@ -1,7 +1,7 @@
 {
   "name": "telegram-mcp",
   "version": "1.0.0",
-  "description": "Local MCP server that connects AI CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
+  "description": "Local MCP server that connects CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
   "type": "module",
   "bin": {
     "telegram-mcp": "bin/telegram-mcp.js"

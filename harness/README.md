@@ -54,7 +54,7 @@ node harness/unit.mjs
 
 Spawns `dist/index.js`, does the MCP handshake, calls `tools/list`, then runs
 every tool in its `CATALOG` over real JSON-RPC. This is the check that proves a
-tool is **reachable from an AI agent**, not just present in the source.
+tool is **reachable from an agent**, not just present in the source.
 
 `CATALOG` is the source of truth for coverage. Every advertised tool must have an
 entry, and every entry must correspond to an advertised tool — a mismatch fails

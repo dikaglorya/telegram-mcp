@@ -24,7 +24,7 @@ export class ConfigError extends Error {
 
 export type Config = {
   apiId: number;
-  /** Secret — never expose to an AI model. */
+  /** Secret — never expose to the model. */
   apiHash: string;
   sessionPath: string;
   mediaDir: string;

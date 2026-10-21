@@ -114,4 +114,5 @@ First public release. A local MCP server for a personal Telegram account, with
 - The package is published as `@dikacode/telegram-mcp`; the unscoped name
   `telegram-mcp` belongs to an unrelated project and is not this server.
 
+[1.0.1]: https://github.com/dikaglorya/telegram-mcp/releases/tag/v1.0.1
 [1.0.0]: https://github.com/dikaglorya/telegram-mcp/releases/tag/v1.0.0

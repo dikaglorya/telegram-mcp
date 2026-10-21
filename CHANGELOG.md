@@ -77,7 +77,7 @@ First public release. A local MCP server for a personal Telegram account, with
 - Some operations require administrator rights; reactions in Saved Messages
   require Telegram Premium.
 - `telegram_clear_history` removes at most 10,000 messages per call.
-- The npm registry package is not published yet. Install from source, from the
-  Git repository, or from the release tarball.
+- The package is published as `@dikacode/telegram-mcp`; the unscoped name
+  `telegram-mcp` belongs to an unrelated project and is not this server.
 
 [1.0.0]: https://github.com/dikaglorya/telegram-mcp/releases/tag/v1.0.0

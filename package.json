@@ -1,5 +1,5 @@
 {
-  "name": "telegram-mcp",
+  "name": "@dikacode/telegram-mcp",
   "version": "1.0.0",
   "description": "Local MCP server that connects CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
   "type": "module",
@@ -65,5 +65,8 @@
     "@types/node": "^24.10.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -30,7 +30,7 @@ body:
     attributes:
       label: How did you install it?
       options:
-        - npx github:dikaglorya/telegram-mcp
+        - npx @dikacode/telegram-mcp
         - Release tarball (npm install -g)
         - Cloned repository
         - Other

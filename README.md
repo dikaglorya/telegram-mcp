@@ -556,7 +556,8 @@ The TypeScript is built with `tsc` to `dist/`. There is no bundler; the publishe
 
 ## Release
 
-**v1.0.0** is the first public release.
+**v1.0.0** is the first public release, published to npm as
+[`@dikacode/telegram-mcp`](https://www.npmjs.com/package/@dikacode/telegram-mcp).
 
 - 69 MCP tools, all registered with strict input schemas.
 - In-chat login, including two-step verification.

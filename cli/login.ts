@@ -22,6 +22,7 @@ import {
   redact,
 } from "../config.js";
 import { createLogger } from "../logger.js";
+import { banner, gap, hint, nextSteps, paint, spinner, step, success, sym, theme, warn } from "../ui.js";
 
 function ask(question: string): Promise<string> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -29,6 +30,10 @@ function ask(question: string): Promise<string> {
     rl.close();
     resolve(answer.trim());
   }));
+}
+
+function askPlain(question: string): Promise<string> {
+  return ask(`${theme.accent(`${sym.arrow} `)}${theme.label(question)} `);
 }
 
 /**
@@ -66,6 +71,10 @@ async function main(): Promise<void> {
   const config = getConfig();
   ensureDirs(config);
 
+  banner({ subtitle: "interactive login", compact: true });
+  gap();
+  step(1, 3, "Checking the existing session");
+
   // Re-running login silently mints a NEW auth key for the same account. Telegram
   // then treats the previous key as AUTH_KEY_DUPLICATED and every client holding
   // it stops working. Refuse to overwrite a session that still works.
@@ -74,27 +83,33 @@ async function main(): Promise<void> {
       connectionRetries: 2,
       baseLogger: createLogger(),
     });
+    const check = spinner("verifying the saved session");
     try {
       await probe.connect();
       const ok = await probe.isUserAuthorized();
       if (ok) {
         const me = (await probe.getMe()) as unknown as Record<string, unknown>;
-        process.stderr.write(
-          `[login] already authorized as ${me.username ?? String(me.id ?? "")} — nothing to do.\n` +
-            `[login] session: ${config.sessionPath}\n` +
-            `[login] pass --force to overwrite it with a fresh auth key.\n`,
-        );
+        check.stop(`${theme.success(sym.ok)} already authorized as ${theme.label(String(me.username ?? me.id ?? ""))}`);
+        gap();
+        hint(`session kept at ${config.sessionPath}`);
+        hint(`pass ${theme.label("--force")} to overwrite it with a fresh auth key`);
         await probe.disconnect().catch(() => undefined);
         return;
       }
+      check.stop(`${theme.warn(`${sym.warn} saved session is no longer authorized`)}`);
     } catch {
+      check.stop(`${theme.warn(`${sym.warn} saved session is unusable — issuing a fresh one`)}`);
       /* dead or duplicated session — fall through and replace it */
     }
     await probe.disconnect().catch(() => undefined);
-    process.stderr.write(`[login] existing session is unusable, issuing a fresh one\n`);
+  } else {
+    hint(hasSession(config) ? `overwriting the session because of ${theme.label("--force")}` : "no session on disk yet");
   }
 
-  process.stderr.write(`[login] session will be stored at ${config.sessionPath}\n`);
+  gap();
+  step(2, 3, "Signing in to Telegram");
+  hint(`the session will be stored at ${config.sessionPath}`);
+  if (!process.stdin.isTTY) hint(`stdin is not a terminal — prompts may not echo correctly`);
 
   const existing = hasSession(config) ? readSessionString(config) : "";
   const session = new StringSession(existing);
@@ -110,30 +125,41 @@ async function main(): Promise<void> {
       phoneNumber: async () => {
         const stored = process.env.TELEGRAM_PHONE?.trim();
         if (stored) {
-          process.stderr.write(`[login] using phone from .env\n`);
+          hint(`using ${theme.label("TELEGRAM_PHONE")} from .env`);
           return stored;
         }
-        return ask("Phone number (international, e.g. +15551234567): ");
+        return askPlain("Phone number (international, e.g. +15551234567)");
       },
-      phoneCode: async () => ask("Login code from Telegram: "),
-      password: async () => askSecret("2FA password (leave blank if none)"),
+      phoneCode: async () => {
+        hint("Telegram is sending a code to your other devices");
+        return askPlain("Login code");
+      },
+      password: async () => {
+        hint("two-step verification is on for this account");
+        return askSecret("2FA password (leave blank if none)");
+      },
       onError: (err) => {
         // The update loop keeps pinging after we disconnect; those late
         // rejections are noise, not auth failures.
         const msg = err instanceof Error ? err.message : String(err);
         if (msg === "TIMEOUT" || msg.includes("TIMEOUT")) return;
-        process.stderr.write(`[login] auth error: ${redact(msg)}\n`);
+        warn(`auth error: ${redact(msg)}`);
       },
     });
 
     const me = (await client.getMe()) as unknown as Record<string, unknown>;
     const serialized = (client.session as StringSession).save();
     writeSessionString(config, serialized);
-    process.stderr.write(
-      `[login] authorized as id=${String(me.id ?? "")} username=${me.username ?? "none"}\n`,
-    );
-    process.stderr.write(`[login] session saved to ${config.sessionPath}\n`);
-    process.stderr.write("[login] you can close this and start the MCP server.\n");
+
+    gap();
+    step(3, 3, "Saving");
+    success(`authorized as ${paint.bold(String(me.username ?? me.id ?? ""))}`);
+    hint(`session saved to ${config.sessionPath} ${theme.muted("(0600)")}`);
+    nextSteps([
+      `start your MCP client — it spawns ${theme.label("telegram-mcp")} from the config you already added`,
+      `or run ${theme.label("telegram-mcp doctor")} to confirm everything is healthy`,
+    ]);
+    gap();
   } finally {
     // gramJS fires the update-ping loop the moment we connect. Disconnecting
     // while it is mid-ping prints `Error: TIMEOUT` after a perfectly good
@@ -150,6 +176,11 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   const msg = err instanceof Error ? err.message : String(err);
-  process.stderr.write(`[login] failed: ${redact(msg)}\n`);
+  process.stderr.write(`${theme.fail(`${sym.fail} login failed: ${redact(msg)}`)}\n`);
+  if (/not set|invalid/i.test(msg)) {
+    process.stderr.write(
+      `  ${theme.muted(`${sym.bullet} get api_id/api_hash from `)}${theme.underline("https://my.telegram.org/apps")}\n`,
+    );
+  }
   process.exit(1);
 });

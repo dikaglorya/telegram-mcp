@@ -11,13 +11,22 @@
  */
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
 
-// Point state/audit at a throwaway dir so tests never touch real ~/.telegram-mcp
-const sandbox = fs.mkdtempSync(path.join(process.env.TMPDIR || "/tmp", "tgmcp-unit-"));
+// Point state/audit at a throwaway dir so tests never touch real ~/.telegram-mcp.
+// os.tmpdir() is the portable choice; "/tmp" does not exist on Windows.
+const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "tgmcp-unit-"));
+process.on("exit", () => {
+  try {
+    fs.rmSync(sandbox, { recursive: true, force: true });
+  } catch {
+    /* a leftover temp dir is not a test failure */
+  }
+});
 process.env.TELEGRAM_STATE_DIR = sandbox;
 process.env.TELEGRAM_SESSION_PATH = path.join(sandbox, "session.txt");
 process.env.TELEGRAM_AUDIT_LOG = path.join(sandbox, "audit.log");

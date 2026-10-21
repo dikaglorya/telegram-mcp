@@ -1,6 +1,6 @@
 {
   "name": "@dikacode/telegram-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Local MCP server that connects CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
   "type": "module",
   "bin": {
@@ -18,6 +18,7 @@
     "start": "node dist/index.js",
     "login": "tsx cli/login.ts",
     "doctor": "tsx cli/doctor.ts",
+    "preview": "node harness/preview.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "login:force": "tsx cli/login.ts --force",
     "test": "npm run build && node harness/unit.mjs",

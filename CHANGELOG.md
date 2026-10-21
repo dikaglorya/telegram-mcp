@@ -4,6 +4,40 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] — 2026-10-21
+
+`telegram-mcp update` — upgrading is a command, not a set of instructions to
+look up. `1.0.1` told you a newer release existed; it still expected you to
+know which npm incantation matched your install.
+
+### Added
+
+- **`telegram-mcp update`** upgrades the running copy. The command is derived
+  from the filesystem, not from a flag:
+  - a global npm install → `npm install -g @dikacode/telegram-mcp@latest`,
+    reusing the prefix it was installed under, so a custom
+    `npm i -g --prefix <dir>` is upgraded in place instead of duplicated;
+  - a git checkout with an upstream → `git pull --ff-only`, then
+    `npm install && npm run build`;
+  - an npx run or a project dependency → nothing on disk to change, so it
+    prints the restart command instead of mutating someone else's tree.
+- **`telegram-mcp update --check`** (alias `--dry-run`) reports the installed
+  and available versions and the exact command it *would* run, and installs
+  nothing.
+- `--help` and the main usage text list the new subcommand.
+- A unit check that the detector reports a git checkout as a checkout, so a
+  regression cannot quietly turn `update` into a second global install.
+
+### Fixed
+
+- Global detection no longer depends on `npm root -g` alone. That call is
+  skipped when npm is not on `PATH` (MCP clients strip it) and it points at
+  npm's own prefix, not at a custom `--prefix`. The real path of the running
+  file decides.
+- `git pull` is only proposed when the checkout actually tracks an upstream.
+  A detached HEAD or an upstream-less clone now says so instead of failing
+  with git's error.
+
 ## [1.0.1] — 2026-10-21
 
 Update path made explicit. `1.0.0` could only be updated by knowing npm's

@@ -150,7 +150,7 @@ telegram-mcp
 }
 ```
 
-Pin a version if you want reproducible installs: `npx -y @dikacode/telegram-mcp@1.0.1`.
+Pin a version if you want reproducible installs: `npx -y @dikacode/telegram-mcp@1.0.2`.
 
 ### 2. Clone and link
 
@@ -170,7 +170,7 @@ npm link             # optional: makes `telegram-mcp` available on PATH
 Download the tarball attached to the latest release and install it globally:
 
 ```bash
-npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.1/dikacode-telegram-mcp-1.0.1.tgz
+npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.2/dikacode-telegram-mcp-1.0.2.tgz
 telegram-mcp
 ```
 
@@ -188,13 +188,33 @@ npm fetches the repository, installs dependencies, runs the `prepare` build, and
 
 ## Updating
 
-How you installed it decides whether you have to do anything.
+One command, whichever way it was installed:
+
+```bash
+telegram-mcp update
+```
+
+It works out how *this* copy got here and runs the right thing — `npm install
+-g @latest` for a global install (reusing a custom `--prefix`), `git pull
+--ff-only` plus a rebuild for a checkout, and a plain restart instruction for an
+npx run, where nothing on disk needs changing. `--check` reports and installs
+nothing.
+
+```text
+telegram-mcp 1.0.2 · update
+
+  installed   1.0.1  /home/you/.local/lib/node_modules/@dikacode/telegram-mcp
+  latest      1.0.2
+  install     global npm package
+
+  ▲ 1.0.1 -> 1.0.2 available
+```
 
 | Installed with | Behaviour |
 | --- | --- |
 | `npx -y @dikacode/telegram-mcp` (unpinned) | **Automatic.** npm resolves `latest` on every start, so the next client restart picks up a new release. |
-| `npx -y @dikacode/telegram-mcp@1.0.1` (pinned) | **Never.** That is the point of pinning. |
-| `npm install -g @dikacode/telegram-mcp` | **Manual**, one command: `npm update -g @dikacode/telegram-mcp` |
+| `npx -y @dikacode/telegram-mcp@1.0.2` (pinned) | **Never.** That is the point of pinning. |
+| `npm install -g @dikacode/telegram-mcp` | **`telegram-mcp update`**, or `npm update -g @dikacode/telegram-mcp`. |
 | Release tarball | **Manual.** Reinstall from the newer tarball. |
 | `npx -y github:dikaglorya/telegram-mcp` | **Not automatic.** npm caches the fetched repo; clear the cache or pin a ref (`#main`) to move forward. |
 
@@ -202,7 +222,8 @@ Check what you are running:
 
 ```bash
 telegram-mcp --version
-npm outdated -g @dikacode/telegram-mcp     # global installs only
+telegram-mcp update --check                 # newer release available? installs nothing
+npm outdated -g @dikacode/telegram-mcp      # global installs only
 ```
 
 The server also tells you. When a newer release exists it prints one line to
@@ -528,7 +549,8 @@ All settings are environment variables. The server also loads a `.env` next to t
 | `Cannot find module .../dist/index.js` | The package was installed without building. Run `npm run build`, or use the release tarball. |
 | Login works, then the next run asks again | `TELEGRAM_SESSION_PATH` changed between runs. Keep it stable, or leave it unset. |
 | Window/terminal closes when started by hand | Expected: the server speaks MCP on stdio. Start it through a client, or use `npm run login` for the standalone CLI. |
-| `update available: …` on every start | A newer release is on npm. Run the upgrade command it prints, or set `TELEGRAM_UPDATE_CHECK=0` if you pin versions on purpose. |
+| `update available: …` on every start | A newer release is on npm. Run `telegram-mcp update`, or set `TELEGRAM_UPDATE_CHECK=0` if you pin versions on purpose. |
+| `telegram-mcp update` finds no upgrade command | The copy lives in a `node_modules` tree npm does not manage as a global prefix (npx cache, or a project dependency). Restart it as `npx -y @dikacode/telegram-mcp@latest`, or upgrade the project dependency. |
 | `telegram-mcp --version` prints nothing | You are on `1.0.0`, which predates the flag. Upgrade to `1.0.1` or newer. |
 
 ## Development
@@ -565,7 +587,7 @@ The harness also supports `--json`, `--only=tool_a,tool_b`, `--cleanup`, `--recl
 ```
 telegram-mcp/
 ├── bin/telegram-mcp.js      portable launcher (finds Node, then dist/index.js)
-├── cli/                     standalone login and doctor commands
+├── cli/                     standalone login, doctor and update commands
 ├── assets/                  animated README art (SVG, no scripts)
 ├── harness/                 unit checks + end-to-end MCP harness
 ├── index.ts                 stdio entrypoint
@@ -592,7 +614,7 @@ The TypeScript is built with `tsc` to `dist/`. There is no bundler; the publishe
 
 ## Release
 
-**v1.0.1** is the current release, published to npm as
+**v1.0.2** is the current release, published to npm as
 [`@dikacode/telegram-mcp`](https://www.npmjs.com/package/@dikacode/telegram-mcp).
 
 - 69 MCP tools, all registered with strict input schemas.
@@ -602,6 +624,8 @@ The TypeScript is built with `tsc` to `dist/`. There is no bundler; the publishe
 - Optional allowlist, audited calls, redacted secrets.
 - Cross-platform launcher; no hardcoded paths.
 - `--version` / `--help`, and a startup notice when a newer release exists.
+- `telegram-mcp update` upgrades whichever layout is installed; `--check`
+  reports without touching anything.
 - End-to-end harness with paging, policy probes and artifact cleanup.
 
 See [CHANGELOG.md](https://github.com/dikaglorya/telegram-mcp/blob/main/CHANGELOG.md) for the full release notes. Release artifacts are on the [releases page](https://github.com/dikaglorya/telegram-mcp/releases).

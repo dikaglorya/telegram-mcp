@@ -25,12 +25,14 @@ jobs:
             node: 20
           - os: windows-latest
             node: 22
-          # macos-latest is arm64 and regularly sits in the queue past GitHub's
-          # 15-minute limit, which cancels the job. macos-15-intel is the last
-          # supported x86_64 image; both macOS architectures get covered.
+          # GitHub's arm64 macOS runners regularly sit in the queue past the
+          # 15-minute limit and the job gets cancelled, which leaves the badge
+          # red through no fault of the code. macos-15-intel is the last
+          # supported x86_64 image and schedules reliably; the unit checks are
+          # pure JavaScript, so architecture coverage is not the variable here.
           - os: macos-15-intel
             node: 20
-          - os: macos-latest
+          - os: macos-15-intel
             node: 22
     steps:
       - uses: actions/checkout@v4

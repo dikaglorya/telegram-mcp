@@ -12,10 +12,14 @@
 import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
+
+// Absolute Windows paths need a file:// URL before the ESM loader will accept
+// them. pathToFileURL also handles spaces and non-ASCII paths.
+const load = (relative) => import(pathToFileURL(path.join(root, relative)).href);
 
 // Point state/audit at a throwaway dir so tests never touch real ~/.telegram-mcp.
 // os.tmpdir() is the portable choice; "/tmp" does not exist on Windows.
@@ -67,11 +71,11 @@ function check(name, fn) {
   }
 }
 
-const { normalizeError, formatError } = await import(path.join(root, "dist/errors.js"));
-const { audit } = await import(path.join(root, "dist/audit.js"));
-const policy = await import(path.join(root, "dist/policy.js"));
-const { markedId, enforce, isFlood, withFloodRetry, shapeMedia, resolveChat, peerKind, peerIdOf, shapeMessage } = await import(path.join(root, "dist/helpers.js"));
-const { inviteSlug, idsFromUpdates } = await import(path.join(root, "dist/util.js"));
+const { normalizeError, formatError } = await load("dist/errors.js");
+const { audit } = await load("dist/audit.js");
+const policy = await load("dist/policy.js");
+const { markedId, enforce, isFlood, withFloodRetry, shapeMedia, resolveChat, peerKind, peerIdOf, shapeMessage } = await load("dist/helpers.js");
+const { inviteSlug, idsFromUpdates } = await load("dist/util.js");
 const { Api } = await import("telegram");
 
 /* -------------------------------------------------------------- util helpers */
@@ -687,7 +691,7 @@ check("admin: the 'none' preset sets every right to an explicit false", async ()
   // from `{}` reported success while the member stayed an admin. The list also has
   // to match Api.ChatAdminRights exactly: it held 11 entries while the class has
   // 15, so four story/topic rights were left absent and survived a demotion.
-  const { adminRights, ALL_ADMIN_RIGHTS } = await import(path.join(root, "dist/admin.js"));
+  const { adminRights, ALL_ADMIN_RIGHTS } = await load("dist/admin.js");
   const none = adminRights("none");
   const wrong = ALL_ADMIN_RIGHTS.filter((r) => none[r] !== false);
   if (wrong.length) throw new Error(`these rights were not explicitly false: ${wrong.join(", ")}`);
@@ -1051,7 +1055,9 @@ check("media: a typo in the download cap is not read as 'no cap'", async () => {
     else process.env.TELEGRAM_MAX_DOWNLOAD_BYTES = value;
     // A distinct query string forces a fresh module instance so the value is
     // re-read; the module caches it at import time by design.
-    const mod = await import(path.join(root, `dist/media.js?cap=${encodeURIComponent(String(value))}`));
+    const url = pathToFileURL(path.join(root, "dist/media.js"));
+    url.search = `?cap=${encodeURIComponent(String(value))}`;
+    const mod = await import(url.href);
     return mod.maxDownloadBytes();
   };
   try {

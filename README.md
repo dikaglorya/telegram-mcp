@@ -150,7 +150,7 @@ telegram-mcp
 }
 ```
 
-Pin a version if you want reproducible installs: `npx -y @dikacode/telegram-mcp@1.0.2`.
+Pin a version if you want reproducible installs: `npx -y @dikacode/telegram-mcp@1.0.3`.
 
 ### 2. Clone and link
 
@@ -170,7 +170,7 @@ npm link             # optional: makes `telegram-mcp` available on PATH
 Download the tarball attached to the latest release and install it globally:
 
 ```bash
-npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.2/dikacode-telegram-mcp-1.0.2.tgz
+npm install -g https://github.com/dikaglorya/telegram-mcp/releases/download/v1.0.3/dikacode-telegram-mcp-1.0.3.tgz
 telegram-mcp
 ```
 
@@ -201,19 +201,19 @@ npx run, where nothing on disk needs changing. `--check` reports and installs
 nothing.
 
 ```text
-telegram-mcp 1.0.2 · update
+telegram-mcp 1.0.3 · update
 
-  installed   1.0.1  /home/you/.local/lib/node_modules/@dikacode/telegram-mcp
-  latest      1.0.2
+  installed   1.0.2  /home/you/.local/lib/node_modules/@dikacode/telegram-mcp
+  latest      1.0.3
   install     global npm package
 
-  ▲ 1.0.1 -> 1.0.2 available
+  ▲ 1.0.2 -> 1.0.3 available
 ```
 
 | Installed with | Behaviour |
 | --- | --- |
 | `npx -y @dikacode/telegram-mcp` (unpinned) | **Automatic.** npm resolves `latest` on every start, so the next client restart picks up a new release. |
-| `npx -y @dikacode/telegram-mcp@1.0.2` (pinned) | **Never.** That is the point of pinning. |
+| `npx -y @dikacode/telegram-mcp@1.0.3` (pinned) | **Never.** That is the point of pinning. |
 | `npm install -g @dikacode/telegram-mcp` | **`telegram-mcp update`**, or `npm update -g @dikacode/telegram-mcp`. |
 | Release tarball | **Manual.** Reinstall from the newer tarball. |
 | `npx -y github:dikaglorya/telegram-mcp` | **Not automatic.** npm caches the fetched repo; clear the cache or pin a ref (`#main`) to move forward. |
@@ -230,7 +230,7 @@ The server also tells you. When a newer release exists it prints one line to
 stderr at startup, after the MCP transport is already serving:
 
 ```
-[telegram-mcp] update available: 1.0.1 -> 1.0.2. Run `npm install -g @dikacode/telegram-mcp@latest`, or set TELEGRAM_UPDATE_CHECK=0 to silence this.
+[telegram-mcp] update available: 1.0.2 -> 1.0.3. Run `npm install -g @dikacode/telegram-mcp@latest`, or set TELEGRAM_UPDATE_CHECK=0 to silence this.
 ```
 
 That check is a single request to the npm registry with an 800 ms timeout,
@@ -614,7 +614,7 @@ The TypeScript is built with `tsc` to `dist/`. There is no bundler; the publishe
 
 ## Release
 
-**v1.0.2** is the current release, published to npm as
+**v1.0.3** is the current release, published to npm as
 [`@dikacode/telegram-mcp`](https://www.npmjs.com/package/@dikacode/telegram-mcp).
 
 - 69 MCP tools, all registered with strict input schemas.

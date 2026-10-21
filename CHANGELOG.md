@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] — 2026-10-21
+
+`telegram-mcp update` did nothing when run as `telegram-mcp update`: the
+command exited 0 and printed no output. Only the module entrypoint worked, so
+the documented form — the one in the README and in `--help` — was the broken
+one.
+
+### Fixed
+
+- The dispatcher now calls an exported `main()` when a subcommand module has
+  one. `cli/update.ts` guards its own top-level invocation so the unit checks
+  can import `detectInstall` without printing a report, and that guard is
+  exactly why the dynamic import from `index.ts` had no effect.
+- `telegram-mcp update --help` describes `update`. Subcommands own their flags
+  now, instead of the server's usage text intercepting `--help` first.
+- A unit check runs the real binary and asserts the plan is printed, because
+  the previous tests imported the module and never exercised the command.
+
 ## [1.0.2] — 2026-10-21
 
 `telegram-mcp update` — upgrading is a command, not a set of instructions to

@@ -11,6 +11,8 @@ import { getClient } from "./telegram.js";
 import { getConfig } from "./config.js";
 import { allowEntries } from "./policy.js";
 import { resolveChat, enforce, markedId, uploadFileFromPath, requireChat } from "./helpers.js";
+import { readAccessProfile } from "./access.js";
+import { readApprovalMode } from "./approvals.js";
 import { ok, guard, fail } from "./util.js";
 
 export function registerAccountTools(server: McpServer): void {
@@ -42,6 +44,10 @@ export function registerAccountTools(server: McpServer): void {
           },
           allowAllChats: getConfig().allowAllChats,
           allowlist: allowEntries(getConfig()).map((e) => e.value),
+          accessProfile: readAccessProfile().profile,
+          accessProfileError: readAccessProfile().error ?? null,
+          approvalMode: readApprovalMode().mode,
+          approvalModeError: readApprovalMode().error ?? null,
         });
       }),
   );

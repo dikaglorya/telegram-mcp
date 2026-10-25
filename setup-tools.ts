@@ -26,6 +26,8 @@ import { normalizeError } from "./errors.js";
 import { ok, guard } from "./util.js";
 import { PACKAGE_NAME, SERVER_VERSION } from "./version.js";
 import { getUpdateInfo } from "./update-check.js";
+import { readAccessProfile } from "./access.js";
+import { readApprovalMode } from "./approvals.js";
 
 /** One line of the doctor report. */
 type Check = { name: string; pass: boolean; detail: string };
@@ -161,6 +163,22 @@ export function registerSetupTools(server: McpServer): void {
         const checks: Check[] = [];
         let config: Config | null = null;
         let account: AccountSummary | null = null;
+
+        // 0. policy — report the profile and approval mode even when credentials
+        //    are missing. An invalid value fails the health check: the server
+        //    fails closed, and the human needs to see why.
+        const access = readAccessProfile();
+        checks.push({
+          name: "access profile",
+          pass: !access.error,
+          detail: `${access.profile} (${access.source})${access.error ? ` — ${access.error}` : ""}`,
+        });
+        const approval = readApprovalMode();
+        checks.push({
+          name: "approval mode",
+          pass: !approval.error,
+          detail: `${approval.mode} (${approval.source})${approval.error ? ` — ${approval.error}` : ""}`,
+        });
 
         // 1. config — api_id/api_hash present and well-formed. Detail carries no secret.
         try {

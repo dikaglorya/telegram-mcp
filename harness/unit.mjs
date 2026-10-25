@@ -72,10 +72,15 @@ function check(name, fn) {
 }
 
 const { normalizeError, formatError } = await load("dist/errors.js");
-const { audit } = await load("dist/audit.js");
+const { audit, flushAuditSync } = await load("dist/audit.js");
 const policy = await load("dist/policy.js");
 const { markedId, enforce, isFlood, withFloodRetry, shapeMedia, resolveChat, peerKind, peerIdOf, shapeMessage } = await load("dist/helpers.js");
 const { inviteSlug, idsFromUpdates } = await load("dist/util.js");
+const access = await load("dist/access.js");
+const approvals = await load("dist/approvals.js");
+const workflow = await load("dist/workflow-core.js");
+const auditRead = await load("dist/audit-read.js");
+const { resetConfigForTest } = await load("dist/config.js");
 const { Api } = await import("telegram");
 
 /* -------------------------------------------------------------- util helpers */
@@ -331,6 +336,7 @@ check("helpers: isFlood does not swallow unrelated errors", () => {
 
 check("audit: error CODE is preserved (not mistaken for OTP)", () => {
   audit("unit_test", { chat: "x" }, "error", { code: "FLOOD_WAIT", message: "slow down" });
+  flushAuditSync();
   const line = fs.readFileSync(process.env.TELEGRAM_AUDIT_LOG, "utf8").trim().split("\n").pop();
   const rec = JSON.parse(line);
   if (rec.detail.code !== "FLOOD_WAIT") throw new Error(`got ${JSON.stringify(rec.detail.code)}`);
@@ -339,6 +345,7 @@ check("audit: error CODE is preserved (not mistaken for OTP)", () => {
 
 check("audit: numeric OTP in 'code' is redacted", () => {
   audit("unit_test", { code: "12345" }, "error", { code: "123456" });
+  flushAuditSync();
   const line = fs.readFileSync(process.env.TELEGRAM_AUDIT_LOG, "utf8").trim().split("\n").pop();
   const rec = JSON.parse(line);
   if (rec.args.code !== "[redacted]") throw new Error(`args.code=${rec.args.code}`);
@@ -348,6 +355,7 @@ check("audit: numeric OTP in 'code' is redacted", () => {
 
 check("audit: password/token keys always redacted", () => {
   audit("unit_test", { password: "hunter2", token: "abc", api_hash: "zz" }, "ok");
+  flushAuditSync();
   const line = fs.readFileSync(process.env.TELEGRAM_AUDIT_LOG, "utf8").trim().split("\n").pop();
   const rec = JSON.parse(line);
   for (const k of ["password", "token", "api_hash"]) {
@@ -358,6 +366,7 @@ check("audit: password/token keys always redacted", () => {
 
 check("audit: phone_code_hash is always redacted (it is a credential)", () => {
   audit("unit_test", { phone_code_hash: "1a2b3c4d5e", phoneCodeHash: "abc" }, "ok");
+  flushAuditSync();
   const line = fs.readFileSync(process.env.TELEGRAM_AUDIT_LOG, "utf8").trim().split("\n").pop();
   const rec = JSON.parse(line);
   if (rec.args.phone_code_hash !== "[redacted]") throw new Error(`got ${rec.args.phone_code_hash}`);
@@ -367,6 +376,7 @@ check("audit: phone_code_hash is always redacted (it is a credential)", () => {
 
 check("audit: non-taxonomy 'hash' value is redacted", () => {
   audit("unit_test", { hash: "AbCdEf12" }, "ok");
+  flushAuditSync();
   const line = fs.readFileSync(process.env.TELEGRAM_AUDIT_LOG, "utf8").trim().split("\n").pop();
   const rec = JSON.parse(line);
   if (rec.args.hash !== "[redacted]") throw new Error(`got ${rec.args.hash}`);
@@ -393,6 +403,8 @@ check("policy: allowlist beats allowAllChats=true", () => {
 check("policy: enforce() blocks a non-listed chat with an actionable message", () => {
   // enforce() is the real production gate (called by requireChat); assertAllowed()
   // was removed as dead code. This must exercise the path tools actually use.
+  // Reset memoized config so it picks up the env vars we're about to set.
+  resetConfigForTest();
   const cfg = { ...baseConfig, allowAllChats: false, allowlist: ["x"] };
   process.env.TELEGRAM_ALLOWED_CHATS = "x";
   process.env.TELEGRAM_ALLOW_ALL_CHATS = "false";
@@ -411,6 +423,7 @@ check("policy: enforce() blocks a non-listed chat with an actionable message", (
 });
 
 check("policy: enforce() allows a listed chat", () => {
+  resetConfigForTest();
   process.env.TELEGRAM_ALLOWED_CHATS = "examplechannel";
   process.env.TELEGRAM_ALLOW_ALL_CHATS = "false";
   try {
@@ -887,6 +900,9 @@ check("no state-changing tool answers without a read-back", () => {
     "telegram_audit_log",
     "telegram_audit_summary",
     "telegram_translate",
+    "telegram_permissions",
+    "telegram_briefing",
+    "telegram_search_intelligence",
     // Local-only or already verified by other means.
     // Local bookkeeping: these read and write state.json, not Telegram, so the
     // record they return *is* the state.
@@ -1005,6 +1021,264 @@ check("full_user honours its user argument instead of always reading self", () =
     throw new Error("full_user does not compare the resolved id against the authorized account");
   }
   return "full_user resolves the requested user, gates it, and labels self vs other by identity";
+});
+
+/* --------------------------------------------------------------- access */
+
+check("access: default is full, valid profiles parse, invalid fails closed", () => {
+  const fallback = access.readAccessProfile({});
+  if (fallback.profile !== "full" || fallback.source !== "default") {
+    throw new Error(`default=${JSON.stringify(fallback)}`);
+  }
+  for (const profile of access.ACCESS_PROFILES) {
+    const state = access.readAccessProfile({ TELEGRAM_ACCESS_PROFILE: profile });
+    if (state.profile !== profile || state.error) throw new Error(`${profile}: ${JSON.stringify(state)}`);
+  }
+  const invalid = access.readAccessProfile({ TELEGRAM_ACCESS_PROFILE: "read" });
+  if (invalid.profile !== "readonly") throw new Error(`invalid profile did not fail closed: ${invalid.profile}`);
+  if (!invalid.error || !/readonly/.test(invalid.error)) throw new Error("invalid profile has no explanation");
+  return "full by default, readonly on a typo";
+});
+
+check("access: every write is classified into a profile", () => {
+  const cases = [
+    ["telegram_get_history", { readOnlyHint: true }, "readonly", true],
+    ["telegram_login_start", { readOnlyHint: false }, "readonly", true],
+    ["telegram_send_message", { readOnlyHint: false }, "messaging", true],
+    ["telegram_kick_member", { readOnlyHint: false }, "moderator", true],
+    ["telegram_delete_chat", { readOnlyHint: false, destructiveHint: true }, "full", true],
+    ["telegram_unclassified_write", { readOnlyHint: false }, "full", false],
+  ];
+  for (const [name, annotations, required, classified] of cases) {
+    const got = access.classifyTool(name, annotations);
+    if (got.minimumProfile !== required) throw new Error(`${name}: ${got.minimumProfile}, expected ${required}`);
+    if (got.classified !== classified) throw new Error(`${name}: classified=${got.classified}`);
+  }
+  const deny = access.checkToolAccess("telegram_send_message", { readOnlyHint: false }, "readonly");
+  if (deny.allowed) throw new Error("readonly allowed a send");
+  if (deny.requiredProfile !== "messaging") throw new Error(`required=${deny.requiredProfile}`);
+  if (!/Nothing was sent/.test(deny.hint)) throw new Error("denial does not say nothing happened");
+  if (!access.checkToolAccess("telegram_send_message", { readOnlyHint: false }, "messaging").allowed) {
+    throw new Error("messaging refused a send");
+  }
+  if (access.checkToolAccess("telegram_kick_member", { readOnlyHint: false }, "messaging").allowed) {
+    throw new Error("messaging allowed a kick");
+  }
+  if (access.checkToolAccess("telegram_delete_chat", { readOnlyHint: false }, "moderator").allowed) {
+    throw new Error("moderator allowed deleting a chat");
+  }
+  if (!access.checkToolAccess("telegram_delete_chat", { readOnlyHint: false }, "full").allowed) {
+    throw new Error("full refused a delete");
+  }
+  return "6 classifications, denial carries the required profile";
+});
+
+/* ------------------------------------------------------------ approvals */
+
+check("approvals: hash is stable, order-independent and one-way", () => {
+  const a = approvals.approvalHash({ chat: "@x", messageIds: [1, 2], note: "hi" });
+  const b = approvals.approvalHash({ note: "hi", messageIds: [1, 2], chat: "@x" });
+  const c = approvals.approvalHash({ note: "hi", messageIds: [1, 3], chat: "@x" });
+  if (a !== b) throw new Error("same args in a different key order produced a different hash");
+  if (a === c) throw new Error("different args produced the same hash");
+  if (!/^[a-f0-9]{64}$/.test(a)) throw new Error(`not a sha256 hex digest: ${a}`);
+  return "stable, order-independent, 64 hex chars";
+});
+
+check("approvals: pending -> approve -> consume exactly once", () => {
+  const tool = "telegram_unit_approval_once";
+  const args = { chat: "@unit_once", messageIds: [101] };
+  const created = approvals.createApprovalRequest(tool, args);
+  if (created.request.status !== "pending") throw new Error(`status=${created.request.status}`);
+  const again = approvals.createApprovalRequest(tool, args);
+  if (!again.reused || again.request.id !== created.request.id) throw new Error("duplicate request was not reused");
+  if (approvals.consumeApproval(tool, args)) throw new Error("consumed an unapproved request");
+  approvals.approveRequest(created.request.id);
+  const consumed = approvals.consumeApproval(tool, args);
+  if (!consumed || consumed.id !== created.request.id) throw new Error("approved request was not consumed");
+  if (approvals.consumeApproval(tool, args)) throw new Error("approval was reusable");
+  return "reused pending, consumed once";
+});
+
+check("approvals: wrong tool or wrong args do not consume the approval", () => {
+  const tool = "telegram_unit_approval_match";
+  const args = { chat: "@unit_match", messageIds: [202] };
+  const created = approvals.createApprovalRequest(tool, args);
+  approvals.approveRequest(created.request.id);
+  if (approvals.consumeApproval(tool, { chat: "@unit_match", messageIds: [999] })) {
+    throw new Error("consumed with different args");
+  }
+  if (approvals.consumeApproval("telegram_other_tool", args)) throw new Error("consumed for a different tool");
+  const consumed = approvals.consumeApproval(tool, args);
+  if (!consumed) throw new Error("the real call could not consume its approval");
+  return "tool and args are both bound";
+});
+
+check("approvals: deny is final and expired requests cannot be approved", () => {
+  const denied = approvals.createApprovalRequest("telegram_unit_approval_deny", { chat: "@deny" });
+  approvals.denyRequest(denied.request.id);
+  let deniedAgain = false;
+  try {
+    approvals.approveRequest(denied.request.id);
+  } catch {
+    deniedAgain = true;
+  }
+  if (!deniedAgain) throw new Error("a denied request could be approved");
+
+  const expiring = approvals.createApprovalRequest("telegram_unit_approval_expired", { chat: "@expired" });
+  const file = approvals.approvalsPath();
+  const store = JSON.parse(fs.readFileSync(file, "utf8"));
+  const record = store.requests.find((item) => item.id === expiring.request.id);
+  record.expiresAt = new Date(Date.now() - 60_000).toISOString();
+  fs.writeFileSync(file, JSON.stringify(store, null, 2));
+  let expired = false;
+  try {
+    approvals.approveRequest(expiring.request.id);
+  } catch {
+    expired = true;
+  }
+  if (!expired) throw new Error("an expired request could be approved");
+  return "deny and expiry are enforced";
+});
+
+/* --------------------------------------------------------- workflows */
+
+check("workflow: briefing groups senders, days, media and questions", () => {
+  const messages = [
+    {
+      id: 1,
+      date: "2026-10-01T10:00:00.000Z",
+      text: "Question one?",
+      senderId: "u1",
+      senderName: "Alice",
+      entities: [{ type: "url", url: "https://example.com/a" }],
+    },
+    {
+      id: 2,
+      date: "2026-10-01T10:05:00.000Z",
+      text: "Answer",
+      senderId: "u2",
+      senderName: "Bob",
+      replyTo: 1,
+    },
+    {
+      id: 3,
+      date: "2026-10-02T09:00:00.000Z",
+      text: "Question two?",
+      senderId: "u1",
+      senderName: "Alice",
+      media: { type: "photo" },
+      views: 100,
+    },
+    {
+      id: 4,
+      date: "2026-10-02T09:05:00.000Z",
+      text: "",
+      senderId: "u2",
+      senderName: "Bob",
+      media: { type: "document" },
+      views: 50,
+    },
+  ];
+  const briefing = workflow.buildBriefing(messages, { linkFor: (id) => `https://t.me/x/${id}` });
+  if (briefing.count !== 4) throw new Error(`count=${briefing.count}`);
+  if (briefing.bySender.length !== 2 || briefing.bySender[0].count !== 2) {
+    throw new Error(`bySender=${JSON.stringify(briefing.bySender)}`);
+  }
+  if (briefing.byDay.length !== 2 || briefing.byDay[0].day !== "2026-10-01") {
+    throw new Error(`byDay=${JSON.stringify(briefing.byDay)}`);
+  }
+  if (briefing.media.photo !== 1 || briefing.media.document !== 1) {
+    throw new Error(`media=${JSON.stringify(briefing.media)}`);
+  }
+  if (briefing.questionCandidates.length !== 2) throw new Error("questions not found");
+  const answered = briefing.questionCandidates.find((q) => q.id === 1);
+  const open = briefing.questionCandidates.find((q) => q.id === 3);
+  if (!answered || answered.directReplies !== 1 || answered.noDirectReply) {
+    throw new Error(`answered=${JSON.stringify(answered)}`);
+  }
+  if (!open || open.directReplies !== 0 || !open.noDirectReply) {
+    throw new Error(`open=${JSON.stringify(open)}`);
+  }
+  if (open.link !== "https://t.me/x/3") throw new Error(`link=${open.link}`);
+  if (!briefing.links.includes("https://example.com/a")) throw new Error("url entity lost");
+  if (briefing.topViewed[0].id !== 3) throw new Error(`topViewed=${JSON.stringify(briefing.topViewed)}`);
+  if (briefing.highlights[0].id !== 4) throw new Error("highlights are not newest-first");
+  return "2 senders, 2 days, 2 questions, media and links counted";
+});
+
+check("workflow: search report groups by sender and chat with a date range", () => {
+  const hits = [
+    {
+      id: 1,
+      date: "2026-10-01T10:00:00.000Z",
+      text: "invoice",
+      senderId: "u1",
+      senderName: "Alice",
+      chat: { id: "-1001", title: "Finance" },
+      media: { type: "photo" },
+    },
+    {
+      id: 2,
+      date: "2026-10-03T10:00:00.000Z",
+      text: "invoice again",
+      senderId: "u1",
+      senderName: "Alice",
+      chat: { id: "-1001", title: "Finance" },
+    },
+    {
+      id: 3,
+      date: "2026-10-02T10:00:00.000Z",
+      text: "invoice",
+      senderId: "u2",
+      senderName: "Bob",
+      chat: { id: "-1002", title: "Ops" },
+    },
+  ];
+  const report = workflow.buildSearchReport("invoice", hits);
+  if (report.count !== 3) throw new Error(`count=${report.count}`);
+  if (report.bySender[0].key !== "u1" || report.bySender[0].count !== 2) {
+    throw new Error(`bySender=${JSON.stringify(report.bySender)}`);
+  }
+  if (report.byChat[0].title !== "Finance" || report.byChat[0].count !== 2) {
+    throw new Error(`byChat=${JSON.stringify(report.byChat)}`);
+  }
+  if (report.media.photo !== 1) throw new Error("media count lost");
+  if (report.dateRange.from !== "2026-10-01T10:00:00.000Z" || report.dateRange.to !== "2026-10-03T10:00:00.000Z") {
+    throw new Error(`dateRange=${JSON.stringify(report.dateRange)}`);
+  }
+  return "2 senders, 2 chats, date range and media";
+});
+
+/* ----------------------------------------------------------- audit read */
+
+check("audit-read: page filters and summary preserve error codes", () => {
+  const file = path.join(sandbox, "audit-read.log");
+  const lines = [
+    { ts: "2026-10-01T00:00:00.000Z", tool: "alpha", outcome: "ok", args: { chat: "@a" } },
+    {
+      ts: "2026-10-01T00:01:00.000Z",
+      tool: "beta",
+      outcome: "error",
+      args: {},
+      detail: { code: "FLOOD_WAIT" },
+    },
+  ];
+  fs.writeFileSync(file, `${lines.map((line) => JSON.stringify(line)).join("\n")}\n{bad json\n`);
+  const page = auditRead.readAuditPage(file, { limit: 10 });
+  if (!page.exists || page.totalLines !== 3 || page.count !== 3) {
+    throw new Error(`page=${JSON.stringify({ exists: page.exists, totalLines: page.totalLines, count: page.count })}`);
+  }
+  if (page.entries[0].tool !== "(unparsable line)") throw new Error("newest-first order or unparsable line changed");
+  const onlyErrors = auditRead.readAuditPage(file, { limit: 10, outcome: "error" });
+  if (onlyErrors.count !== 1 || onlyErrors.entries[0].tool !== "beta") throw new Error("outcome filter broken");
+  const summary = auditRead.summarizeAudit(file);
+  if (!summary || summary.calls !== 2 || summary.ok !== 1 || summary.error !== 1) {
+    throw new Error(`summary=${JSON.stringify(summary)}`);
+  }
+  if (summary.unparsableLines !== 1) throw new Error(`unparsable=${summary.unparsableLines}`);
+  if (summary.errorsByCode.FLOOD_WAIT !== 1) throw new Error("error code lost");
+  return "3 lines, filter, summary and error code";
 });
 
 /* ------------------------------------------------------------------ report */

@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Api } from "telegram";
 import { getClient } from "./telegram.js";
-import { enforce, markedId, resolveChat } from "./helpers.js";
+import { enforce, markedId, resolveChat, invalidateDialogCache } from "./helpers.js";
 import { ok, guard, fail } from "./util.js";
 
 export function registerContactTools(server: McpServer): void {
@@ -243,6 +243,7 @@ export function registerContactTools(server: McpServer): void {
           title,
           id: rawId !== undefined ? markedId({ id: rawId, className: "Channel" }) : null,
         });
+      invalidateDialogCache();
       }),
   );
 
@@ -272,6 +273,7 @@ export function registerContactTools(server: McpServer): void {
           title,
           id: rawId !== undefined ? markedId({ id: rawId, className: "Channel" }) : null,
         });
+      invalidateDialogCache();
       }),
   );
 

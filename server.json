@@ -1,0 +1,122 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.dikaglorya/telegram-mcp",
+  "title": "Telegram MCP",
+  "description": "Local MCP server connecting AI agents to a personal Telegram account over MTProto. Full account access with access profiles, human approval gate, localhost dashboard, MCP prompts/resources, and workflow tools.",
+  "version": "1.1.0",
+  "websiteUrl": "https://github.com/dikaglorya/telegram-mcp",
+  "repository": {
+    "url": "https://github.com/dikaglorya/telegram-mcp",
+    "source": "github",
+    "id": "739428123"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/dikaglorya/telegram-mcp/main/assets/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@dikacode/telegram-mcp",
+      "version": "1.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "runtimeHint": "npx",
+      "runtimeArguments": [
+        {
+          "type": "positional",
+          "valueHint": "package",
+          "value": "-y"
+        },
+        {
+          "type": "positional",
+          "valueHint": "package",
+          "value": "@dikacode/telegram-mcp@latest"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "TELEGRAM_API_ID",
+          "description": "Numeric app id from https://my.telegram.org/apps",
+          "isRequired": true,
+          "isSecret": false,
+          "placeholder": "1234567"
+        },
+        {
+          "name": "TELEGRAM_API_HASH",
+          "description": "App hash from https://my.telegram.org/apps",
+          "isRequired": true,
+          "isSecret": true,
+          "placeholder": "0123456789abcdef0123456789abcdef"
+        },
+        {
+          "name": "TELEGRAM_ACCESS_PROFILE",
+          "description": "Access profile: readonly | messaging | moderator | full (default: full)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "full"
+        },
+        {
+          "name": "TELEGRAM_APPROVAL_MODE",
+          "description": "Approval mode: off | destructive | writes (default: off)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "off"
+        },
+        {
+          "name": "TELEGRAM_APPROVAL_TTL_SECONDS",
+          "description": "How long a pending approval lives (default: 600, range: 30-86400)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "600"
+        },
+        {
+          "name": "TELEGRAM_ALLOW_ALL_CHATS",
+          "description": "Full access to every chat the account can reach (default: true)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "true"
+        },
+        {
+          "name": "TELEGRAM_ALLOWED_CHATS",
+          "description": "Comma-separated allowlist: @name, numeric id, or exact title",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "@mychannel,-1001234567890"
+        },
+        {
+          "name": "TELEGRAM_STATE_DIR",
+          "description": "State directory for session, approvals, audit, downloads, exports (default: ~/.telegram-mcp)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "~/.telegram-mcp"
+        },
+        {
+          "name": "TELEGRAM_MAX_DOWNLOAD_BYTES",
+          "description": "Hard cap for one download in bytes, 0 = unlimited (default: 0)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "0"
+        },
+        {
+          "name": "TELEGRAM_DASHBOARD_PORT",
+          "description": "Fixed port for the localhost dashboard (default: random)",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "8787"
+        },
+        {
+          "name": "TELEGRAM_DASHBOARD_TOKEN",
+          "description": "Fixed token for the dashboard (min 16 chars, default: random)",
+          "isRequired": false,
+          "isSecret": true,
+          "placeholder": "my-secret-token-16chars"
+        }
+      ]
+    }
+  ]
+}

@@ -123,31 +123,43 @@ export function registerMediaTools(server: McpServer): void {
           fileName ||
           doc?.attributes?.find((a: any) => typeof a?.fileName === "string")?.fileName ||
           `msg_${messageId}`;
-        const buf = (await msg.downloadMedia({})) as Buffer | undefined;
-        // An empty buffer is not a successful download either: writing a 0-byte
-        // file and calling it done is worse than failing loudly.
-        if (!buf || !Buffer.isBuffer(buf) || buf.length === 0) {
-          return fail(`download produced no data for message ${messageId}`);
-        }
-        // `savedName`, not `fileName`: that name belongs to the tool's optional
-        // input argument, which is what the suggestion above already read.
+        // Stream directly to disk to avoid loading large files into memory.
+        // gramJS supports outputFile as a path string (OutFile type).
         const savedName = safeName(suggested);
-        // The marked id, like every other tool reports a chat — a bare channel id is
-        // read by Telegram as a *user* id, so a bare one copied out of the download
-        // list would fail in the next call (CHANGELOG 53).
         const chatId = resolved.peerId || resolved.id;
-        // Downloading the same message used to append a fresh row every time, so the
-        // index filled up with dead pointers — 18 rows for one message, each naming a
-        // file an earlier run had already deleted. One record per (chat, message,
-        // file name) is what a download list should mean.
         const prev = loadState().downloads.find(
           (d) => sameChat(d.chatId, chatId) && d.messageId === messageId && d.fileName === savedName,
         );
-        // Reusing the id keeps the path stable, so the file is overwritten instead of
-        // being orphaned beside a fresh copy.
         const id = prev?.id ?? crypto.randomBytes(4).toString("hex");
         const dest = path.join(config.mediaDir, `${id}_${savedName}`);
-        fs.writeFileSync(dest, buf, { mode: 0o600 });
+
+        // Ensure parent dir exists before streaming.
+        fs.mkdirSync(config.mediaDir, { recursive: true, mode: 0o700 });
+
+        const result = await msg.downloadMedia({ outputFile: dest });
+        // When outputFile is provided, gramJS returns the path string on success,
+        // or undefined on failure. It does not return a Buffer.
+        if (!result) {
+          // Clean up any partial file.
+          try {
+            fs.unlinkSync(dest);
+          } catch {
+            /* ignore */
+          }
+          return fail(`download produced no data for message ${messageId}`);
+        }
+
+        // Verify the file was written and get its size.
+        let size: number;
+        try {
+          size = fs.statSync(dest).size;
+        } catch {
+          return fail(`downloaded file not found at ${dest}`);
+        }
+        if (size === 0) {
+          fs.unlinkSync(dest);
+          return fail(`download produced empty file for message ${messageId}`);
+        }
         const record: DownloadRecord = {
           id,
           path: dest,
@@ -159,7 +171,7 @@ export function registerMediaTools(server: McpServer): void {
               : msg.media?.className === "MessageMediaPhoto"
                 ? "image/jpeg"
                 : "application/octet-stream",
-          size: buf.length,
+          size,
           chatId,
           messageId,
           fileName: savedName,
@@ -180,7 +192,7 @@ export function registerMediaTools(server: McpServer): void {
           if (s.downloads.length > 500) s.downloads = s.downloads.slice(-500);
         });
 
-        return ok({ downloaded: true, path: dest, size: buf.length, fileName: record.fileName });
+        return ok({ downloaded: true, path: dest, size, fileName: record.fileName });
       }),
   );
 
@@ -262,6 +274,9 @@ export function registerMediaTools(server: McpServer): void {
       guard(async () => {
         const full = path.resolve(filePath);
         if (!fs.existsSync(full)) return fail(`file not found: ${full}`);
+        // Reject symlinks to prevent path traversal via symlinks.
+        const lstat = fs.lstatSync(full);
+        if (lstat.isSymbolicLink()) return fail(`refusing to upload symlink: ${full}`);
         const stat = fs.statSync(full);
         if (!stat.isFile()) return fail(`not a regular file: ${full}`);
         const client = await getClient();
@@ -312,6 +327,9 @@ export function registerMediaTools(server: McpServer): void {
       guard(async () => {
         const full = path.resolve(filePath);
         if (!fs.existsSync(full)) return fail(`file not found: ${full}`);
+        // Reject symlinks to prevent path traversal via symlinks.
+        const lstat = fs.lstatSync(full);
+        if (lstat.isSymbolicLink()) return fail(`refusing to upload symlink: ${full}`);
         const client = await getClient();
         const resolved = await requireChat(client, chat);
         const sent: any = await client.sendFile(resolved.entity as any, { file: full, caption, forceDocument: false } as any);

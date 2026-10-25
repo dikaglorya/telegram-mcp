@@ -1,0 +1,26 @@
+# Dependency review configuration
+# See: https://github.com/actions/dependency-review-action
+
+# Fail on vulnerabilities of this severity or higher
+fail-on-severity: high
+
+# Allow specific vulnerabilities that are false positives or accepted risks
+# Format: "GHSA-xxxx-xxxx-xxxx"
+allow-ghsas: []
+
+# Deny specific licenses
+# deny-licenses:
+#   - GPL-3.0
+#   - AGPL-3.0
+
+# Allow specific licenses that might be flagged
+# allow-licenses:
+#   - MIT
+#   - Apache-2.0
+#   - BSD-3-Clause
+#   - ISC
+
+# Custom severity overrides for specific packages
+# Example:
+#   "npm:package-name": "moderate"
+# severity-overrides: {}

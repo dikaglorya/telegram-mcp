@@ -1,6 +1,9 @@
 /**
  * Append-only audit log. Every tool invocation is recorded with timestamp,
  * tool name, sanitized args, and outcome. Never logs secrets.
+ *
+ * Batches writes asynchronously to avoid blocking the event loop on every
+ * tool call. Flushes every 50ms or when queue reaches 100 entries.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -45,6 +48,10 @@ function looksLikeSecretCode(value: unknown): boolean {
   return true;
 }
 
+export function sanitizeForAudit(value: unknown): unknown {
+  return sanitize(value);
+}
+
 function sanitize(value: unknown, depth = 0): unknown {
   if (depth > 4) return "[deep]";
   if (value === null || typeof value !== "object") {
@@ -67,6 +74,39 @@ function sanitize(value: unknown, depth = 0): unknown {
   return out;
 }
 
+/** Async batched audit writer — never blocks the hot path. */
+const auditQueue: string[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+const FLUSH_INTERVAL_MS = 50;
+const FLUSH_BATCH_SIZE = 100;
+let isFlushing = false;
+
+function scheduleFlush(): void {
+  if (flushTimer || isFlushing) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    flushAuditQueue().catch(() => {});
+  }, FLUSH_INTERVAL_MS);
+}
+
+async function flushAuditQueue(): Promise<void> {
+  if (isFlushing || auditQueue.length === 0) return;
+  isFlushing = true;
+  const lines = auditQueue.splice(0, FLUSH_BATCH_SIZE);
+  try {
+    const config = getConfig();
+    const dir = path.dirname(config.auditLogPath);
+    await fs.promises.mkdir(dir, { recursive: true, mode: 0o700 });
+    await fs.promises.appendFile(config.auditLogPath, lines.join("") + "\n", { encoding: "utf8", mode: 0o600 });
+    lockFile(config.auditLogPath);
+  } catch {
+    /* auditing must never break a tool call */
+  } finally {
+    isFlushing = false;
+    if (auditQueue.length > 0) scheduleFlush();
+  }
+}
+
 /**
  * Append one audit record. `detail` may be a string or a structured object
  * (e.g. `{ code, message }` for failures); both are sanitized/truncated.
@@ -74,8 +114,6 @@ function sanitize(value: unknown, depth = 0): unknown {
  */
 export function audit(tool: string, args: unknown, outcome: "ok" | "error", detail?: unknown): void {
   try {
-    const config = getConfig();
-    fs.mkdirSync(path.dirname(config.auditLogPath), { recursive: true, mode: 0o700 });
     const line = JSON.stringify({
       ts: new Date().toISOString(),
       tool,
@@ -83,9 +121,37 @@ export function audit(tool: string, args: unknown, outcome: "ok" | "error", deta
       args: sanitize(args),
       detail: detail === undefined ? undefined : sanitize(detail),
     });
-    fs.appendFileSync(config.auditLogPath, line + "\n", { encoding: "utf8", mode: 0o600 });
-    lockFile(config.auditLogPath);
+    auditQueue.push(line + "\n");
+    if (auditQueue.length >= FLUSH_BATCH_SIZE) {
+      flushAuditQueue().catch(() => {});
+    } else {
+      scheduleFlush();
+    }
   } catch {
     /* auditing must never break a tool call */
+  }
+}
+
+/** Flush immediately (for shutdown). */
+export async function flushAudit(): Promise<void> {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  await flushAuditQueue();
+}
+
+/** Synchronous flush for tests — writes any queued records immediately. */
+export function flushAuditSync(): void {
+  if (auditQueue.length === 0) return;
+  try {
+    const config = getConfig();
+    const dir = path.dirname(config.auditLogPath);
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+    const lines = auditQueue.splice(0);
+    fs.appendFileSync(config.auditLogPath, lines.join("") + "\n", { encoding: "utf8", mode: 0o600 });
+    lockFile(config.auditLogPath);
+  } catch {
+    /* ignore */
   }
 }

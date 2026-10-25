@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "telegram": {
+      "command": "npx",
+      "args": ["-y", "@dikacode/telegram-mcp"],
+      "env": {
+        "TELEGRAM_API_ID": "1234567",
+        "TELEGRAM_API_HASH": "0123456789abcdef0123456789abcdef",
+        "TELEGRAM_ACCESS_PROFILE": "full",
+        "TELEGRAM_APPROVAL_MODE": "destructive"
+      }
+    }
+  }
+}

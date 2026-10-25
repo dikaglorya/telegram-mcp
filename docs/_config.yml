@@ -1,0 +1,49 @@
+title: "telegram-mcp"
+description: "Local MCP server connecting AI agents to a personal Telegram account over MTProto"
+baseurl: "/telegram-mcp"
+url: "https://dikaglorya.github.io"
+
+theme: minima
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# Exclude from processing
+exclude:
+  - node_modules
+  - vendor
+  - Gemfile
+  - Gemfile.lock
+  - README.md
+  - _layouts
+  - assets
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "doc"
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+# GitHub Pages
+github:
+  source: "docs"
+  branch: "gh-pages"

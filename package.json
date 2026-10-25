@@ -1,15 +1,17 @@
 {
   "name": "@dikacode/telegram-mcp",
-  "version": "1.0.3",
-  "description": "Local MCP server that connects CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto.",
+  "version": "1.1.0",
+  "description": "Local MCP server that connects CLI agents (OpenCode, Codex CLI, Claude Code, ...) to a personal Telegram account over MTProto. Access profiles, human approval gate, localhost dashboard, MCP prompts/resources, workflow tools.",
   "type": "module",
   "bin": {
     "telegram-mcp": "bin/telegram-mcp.js"
   },
   "main": "dist/index.js",
+  "mcpName": "io.github.dikaglorya/telegram-mcp",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "server.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -18,11 +20,14 @@
     "start": "node dist/index.js",
     "login": "tsx cli/login.ts",
     "doctor": "tsx cli/doctor.ts",
+    "dashboard": "node dist/cli/dashboard.js",
+    "approvals": "node dist/cli/approvals.js",
     "preview": "node harness/preview.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "login:force": "tsx cli/login.ts --force",
     "test": "npm run build && node harness/unit.mjs",
     "test:unit": "node harness/unit.mjs",
+    "test:access": "node harness/access.mjs",
     "test:mcp": "node harness/mcp-harness.mjs",
     "test:mcp:write": "node harness/mcp-harness.mjs --write",
     "test:all": "npm run build && node harness/unit.mjs && node harness/mcp-harness.mjs --write",
@@ -31,7 +36,8 @@
     "login:flow": "node harness/login-flow.mjs",
     "test:login": "node harness/login-flow.mjs",
     "test:policy": "node harness/mcp-harness.mjs --policy",
-    "test:reclaim": "node harness/mcp-harness.mjs --reclaim"
+    "test:reclaim": "node harness/mcp-harness.mjs --reclaim",
+    "docs:tools": "node tools/generate-tools.js"
   },
   "engines": {
     "node": ">=20"
@@ -44,7 +50,11 @@
     "gramjs",
     "opencode",
     "codex",
-    "claude-code"
+    "claude-code",
+    "access-control",
+    "human-approval",
+    "dashboard",
+    "workflow"
   ],
   "author": "dikaglorya (https://github.com/dikaglorya)",
   "license": "MIT",

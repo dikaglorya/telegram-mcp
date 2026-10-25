@@ -20,6 +20,7 @@ import {
   readSessionString,
   writeSessionString,
   redact,
+  invalidateRedactionCache,
 } from "../config.js";
 import { createLogger } from "../logger.js";
 import { banner, gap, hint, nextSteps, paint, spinner, step, success, sym, theme, warn } from "../ui.js";
@@ -150,6 +151,7 @@ async function main(): Promise<void> {
     const me = (await client.getMe()) as unknown as Record<string, unknown>;
     const serialized = (client.session as StringSession).save();
     writeSessionString(config, serialized);
+    invalidateRedactionCache();
 
     gap();
     step(3, 3, "Saving");

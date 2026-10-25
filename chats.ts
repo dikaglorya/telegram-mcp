@@ -7,7 +7,7 @@ import { Api } from "telegram";
 import { getClient } from "./telegram.js";
 import { getConfig } from "./config.js";
 import { hasAllowlist, isAllowed } from "./policy.js";
-import { requireChat, resolveChat, enforce, shapeChat, markedId, peerKind, toIso } from "./helpers.js";
+import { requireChat, resolveChat, enforce, shapeChat, markedId, peerKind, toIso, invalidateDialogCache } from "./helpers.js";
 import { ok, guard, fail } from "./util.js";
 
 function dialogShape(d: any): Record<string, unknown> {
@@ -258,6 +258,7 @@ export function registerChatTools(server: McpServer): void {
           });
         }
         return ok({ joined: true, target, chat: shapeChat(resolved), verified: member !== null });
+      invalidateDialogCache();
       }),
   );
 
@@ -303,6 +304,7 @@ export function registerChatTools(server: McpServer): void {
         }
 
         return ok({ left: true, verified: stillThere === false, chat: shapeChat(resolved) });
+      invalidateDialogCache();
       }),
   );
 
@@ -356,6 +358,7 @@ export function registerChatTools(server: McpServer): void {
           chat: shapeChat(resolved),
           kind,
         });
+      invalidateDialogCache();
       }),
   );
 

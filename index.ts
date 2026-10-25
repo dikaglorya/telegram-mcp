@@ -11,7 +11,8 @@ import "./env.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { buildServer } from "./server.js";
 import { ensureDirs, getConfig, redact } from "./config.js";
-import { shutdownLogin } from "./login-tools.js";
+import { shutdownLogin, clearLoginCleanupInterval } from "./login-tools.js";
+import { flushAudit } from "./audit.js";
 import { PACKAGE_NAME, SERVER_NAME, SERVER_VERSION } from "./version.js";
 import { warnIfOutdated } from "./update-check.js";
 import { banner, gap, hint, info, muted, sym, theme } from "./ui.js";
@@ -23,6 +24,10 @@ function help(): string {
     ["telegram-mcp --help", "print this help and exit"],
     ["telegram-mcp login", "log in from this terminal instead of chat"],
     ["telegram-mcp doctor", "check config, session and connectivity"],
+    ["telegram-mcp dashboard", "local control center: policy, audit, approvals"],
+    ["telegram-mcp approvals", "list pending human-approval requests"],
+    ["telegram-mcp approve <id>", "allow one exact tool call"],
+    ["telegram-mcp deny <id>", "refuse one tool call"],
     ["telegram-mcp update", "upgrade this install to the latest release"],
     ["telegram-mcp update --check", "report the available version, install nothing"],
   ];
@@ -61,16 +66,22 @@ function help(): string {
 /** Subcommands that act like a CLI instead of serving stdio. */
 function dispatchSubcommand(argv: string[]): boolean {
   const command = argv[0];
-  if (command !== "login" && command !== "doctor" && command !== "update") return false;
-  // login and doctor run their main() on import. update cannot: it is imported
-  // by the unit checks, so it only runs when this dispatcher asks it to.
   const targets: Record<string, string> = {
     login: "./cli/login.js",
     doctor: "./cli/doctor.js",
     update: "./cli/update.js",
+    dashboard: "./cli/dashboard.js",
+    approvals: "./cli/approvals.js",
+    approve: "./cli/approvals.js",
+    deny: "./cli/approvals.js",
   };
+  if (!command || !(command in targets)) return false;
+  // login and doctor run their main() on import. The others are imported by
+  // unit checks, so they only run when this dispatcher asks them to.
   void import(targets[command])
-    .then((mod: { main?: () => Promise<void> }) => mod.main?.())
+    .then((mod: { main?: (args?: string[], command?: string) => Promise<void> }) =>
+      mod.main?.(argv.slice(1), command),
+    )
     .catch((err) => {
       process.stderr.write(
         `${theme.fail(`${sym.fail} cannot start ${command}: ${err instanceof Error ? err.message : String(err)}`)}\n`,
@@ -149,6 +160,10 @@ async function main(): Promise<void> {
     try {
       // Drops any half-finished login socket too, not just the main client.
       await shutdownLogin();
+      // Clear the login cleanup interval.
+      clearLoginCleanupInterval();
+      // Flush any pending audit records before exit.
+      await flushAudit();
     } catch {
       /* ignore */
     }

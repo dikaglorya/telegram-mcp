@@ -4,6 +4,48 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-10-25
+
+Access profiles, human approval gate, localhost dashboard, MCP prompts/resources, workflow tools, streaming downloads, and hardening.
+
+### Added
+
+- **Access profiles** — `TELEGRAM_ACCESS_PROFILE=readonly|messaging|moderator|full` (default: `full`). Enforced server-side before any Telegram request. Invalid value fails closed to `readonly`.
+- **Human approval gate** — `TELEGRAM_APPROVAL_MODE=destructive|writes` (default: `off`). Risky calls return `APPROVAL_REQUIRED` with an `approval_id`. Approve with `telegram-mcp approve <id>` or the dashboard. Denied approvals are final for that exact tool+args.
+- **Local control center** — `telegram-mcp dashboard` starts a localhost-only web UI (`127.0.0.1`, random port, token/cookie auth, CSP, CSRF protection). Shows policy, audit log, approval queue, tool catalog.
+- **MCP prompts (6)** — `telegram_daily_briefing`, `telegram_summarize_chat`, `telegram_find_open_questions`, `telegram_moderate_group`, `telegram_search_intelligence`, `telegram_safe_send`.
+- **MCP resources (4)** — `telegram://status`, `telegram://tools`, `telegram://audit/summary`, `telegram://security-model`.
+- **Workflow tools** — `telegram_briefing` (structured chat briefing with per-sender/day activity, question candidates, highlights, links) and `telegram_search_intelligence` (search grouped by person/chat with date range and filters).
+- **New CLI commands** — `telegram-mcp dashboard`, `telegram-mcp approvals`, `telegram-mcp approve <id>`, `telegram-mcp deny <id>`.
+- **New tool** — `telegram_permissions` reports active profile, approval mode, and which tools are allowed/denied.
+- **Streaming downloads** — `telegram_download_media` streams directly to disk (no OOM on large files).
+- **MCP Registry metadata** — `server.json` with 2025-12-11 schema, npm identifier `@dikacode/telegram-mcp`.
+- **Docs site** — Jekyll site in `docs/` for GitHub Pages.
+- **Integrations** — example configs for OpenCode, Claude Code, Codex, Cursor, VS Code, n8n guide.
+- **CI hardening** — CodeQL, dependency review, package smoke test, tag-based release with provenance.
+- **Test:access harness** — end-to-end verification of profiles and approvals over real MCP stdio.
+
+### Changed
+
+- **Tool count**: 69 → 72 (added `telegram_permissions`, `telegram_briefing`, `telegram_search_intelligence`).
+- **Session enumeration** — `telegram_list_sessions` now requires `full` profile (was `readonly`).
+- **Config memoization** — `getConfig()` and `loadState()` memoized with mtime invalidation.
+- **Approval lock** — exponential backoff (25→200ms), 10s timeout (was 2s), configurable via `TELEGRAM_APPROVAL_LOCK_TIMEOUT_MS`/`TELEGRAM_APPROVAL_LOCK_STALE_MS`. Read-only operations (`listApprovals`) skip write.
+- **Secret redaction** — `redact()` caches secrets at startup, never reads session file at call time.
+- **Pending login cleanup** — periodic 60s interval discards expired login attempts.
+- **Test counts** — 74 → 83 offline unit checks.
+
+### Fixed
+
+- **Audit read filter** — unparsable lines now respect `tool`/`outcome` filters.
+- **Denied approval finality** — retrying a denied call returns `APPROVAL_DENIED`, not a new pending request.
+
+### Security
+
+- All new features default to safe/strict behavior (profiles opt-in, approval off by default).
+- Dashboard never connects to MTProto; no session/hash/message content exposed.
+- Approval hash uses sanitized args (secrets replaced with `[redacted]`).
+
 ## [1.0.3] — 2026-10-21
 
 `telegram-mcp update` did nothing when run as `telegram-mcp update`: the

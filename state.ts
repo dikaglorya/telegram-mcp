@@ -32,6 +32,7 @@ export type StoredState = {
 
 let cache: StoredState | null = null;
 let cachePath: string | null = null;
+let cacheMtime: number | null = null;
 
 export function statePath(): string {
   return getConfig().statePath;
@@ -39,7 +40,14 @@ export function statePath(): string {
 
 export function loadState(): StoredState {
   const file = statePath();
-  if (cache && cachePath === file) return cache;
+  try {
+    const stat = fs.statSync(file);
+    if (cache && cachePath === file && cacheMtime === stat.mtimeMs) {
+      return cache;
+    }
+  } catch {
+    /* file doesn't exist yet — proceed to create empty state */
+  }
   let state: StoredState = {
     version: 1,
     allowlist: [],
@@ -55,6 +63,11 @@ export function loadState(): StoredState {
     };
   } catch (err: unknown) {
     if ((err as NodeJS.ErrnoException).code !== "ENOENT") throw err;
+  }
+  try {
+    cacheMtime = fs.statSync(file).mtimeMs;
+  } catch {
+    cacheMtime = 0;
   }
   cache = state;
   cachePath = file;

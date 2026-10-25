@@ -15,6 +15,22 @@ import { getConfig } from "./config.js";
 import { isAllowed } from "./policy.js";
 import { normalizeError } from "./errors.js";
 
+/** Dialog cache with TTL to avoid N+1 fetches of 300 dialogs per title lookup. */
+let dialogCache: { dialogs: any[]; expiresAt: number } | null = null;
+const DIALOG_CACHE_TTL_MS = 30_000;
+
+async function getDialogsCached(client: TelegramClient): Promise<any[]> {
+  const now = Date.now();
+  if (dialogCache && dialogCache.expiresAt > now) return dialogCache.dialogs;
+  const dialogs = await client.getDialogs({ limit: 500 });
+  dialogCache = { dialogs, expiresAt: now + DIALOG_CACHE_TTL_MS };
+  return dialogs;
+}
+
+export function invalidateDialogCache(): void {
+  dialogCache = null;
+}
+
 export type ResolvedChat = {
   /** Bare entity id as reported by Telegram (positive for users/chats). */
   id: string;
@@ -114,7 +130,7 @@ function toResolved(entity: any, inputEntity: any, resolvedBy: string, fallback:
 async function findByTitle(client: TelegramClient, query: string): Promise<any | null> {
   const needle = query.trim().toLowerCase();
   if (!needle) return null;
-  const dialogs = await client.getDialogs({ limit: 300 });
+  const dialogs = await getDialogsCached(client);
   const exact: any[] = [];
   const partial: any[] = [];
   for (const d of dialogs) {

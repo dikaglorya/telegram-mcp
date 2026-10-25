@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "telegram": {
+      "type": "local",
+      "command": ["npx", "-y", "@dikacode/telegram-mcp"],
+      "environment": {
+        "TELEGRAM_API_ID": "1234567",
+        "TELEGRAM_API_HASH": "0123456789abcdef0123456789abcdef",
+        "TELEGRAM_ACCESS_PROFILE": "full",
+        "TELEGRAM_APPROVAL_MODE": "destructive"
+      },
+      "enabled": true
+    }
+  }
+}

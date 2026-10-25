@@ -61,7 +61,21 @@ function resolvePath(value: string | undefined, fallback: string[]): string {
   return path.resolve(base);
 }
 
+/**
+ * The state directory without requiring API credentials.
+ *
+ * The dashboard, the approval store and `telegram_permissions` all need this
+ * before a session exists, so it must not depend on `getConfig()` succeeding.
+ */
+export function stateDirPath(): string {
+  return resolvePath(process.env.TELEGRAM_STATE_DIR, [".telegram-mcp"]);
+}
+
+let cachedConfig: Config | null = null;
+
 export function getConfig(): Config {
+  if (cachedConfig !== null) return cachedConfig;
+
   const apiIdRaw = process.env.TELEGRAM_API_ID ?? process.env.API_ID;
   const apiHash = process.env.TELEGRAM_API_HASH ?? process.env.API_HASH;
 
@@ -80,14 +94,14 @@ export function getConfig(): Config {
     );
   }
 
-  const stateDir = resolvePath(process.env.TELEGRAM_STATE_DIR, [".telegram-mcp"]);
+  const stateDir = stateDirPath();
   const sessionPath = resolvePath(process.env.TELEGRAM_SESSION_PATH, [".telegram-mcp", "session.txt"]);
   const mediaDir = resolvePath(process.env.TELEGRAM_MEDIA_DIR, [".telegram-mcp", "media"]);
   const exportDir = resolvePath(process.env.TELEGRAM_EXPORT_DIR, [".telegram-mcp", "exports"]);
   const auditLogPath = resolvePath(process.env.TELEGRAM_AUDIT_LOG, [".telegram-mcp", "audit.log"]);
   const statePath = path.join(stateDir, "state.json");
 
-  return {
+  cachedConfig = {
     apiId,
     apiHash,
     sessionPath,
@@ -98,6 +112,17 @@ export function getConfig(): Config {
     allowAllChats: envBool("TELEGRAM_ALLOW_ALL_CHATS", true),
     allowlist: envList("TELEGRAM_ALLOWED_CHATS"),
   };
+  return cachedConfig;
+}
+
+/** Invalidate memoized config (for testing or if env changes at runtime). */
+export function invalidateConfigCache(): void {
+  cachedConfig = null;
+}
+
+/** Test-only: force config to re-read env vars on next getConfig() call. */
+export function resetConfigForTest(): void {
+  cachedConfig = null;
 }
 
 export function ensureDirs(config: Config): void {
@@ -140,20 +165,32 @@ export function writeSessionString(config: Config, session: string): void {
 }
 
 /** Best-effort redaction of anything secret-ish before it leaves the process. */
-export function redact(text: string): string {
-  let out = text;
+let cachedSecrets: string[] | null = null;
+
+function loadSecrets(): string[] {
+  if (cachedSecrets !== null) return cachedSecrets;
   const secrets: string[] = [];
   if (process.env.TELEGRAM_API_HASH) secrets.push(process.env.TELEGRAM_API_HASH);
   if (process.env.API_HASH) secrets.push(process.env.API_HASH);
-  if (process.env.TELEGRAM_API_ID) secrets.push(process.env.TELEGRAM_API_ID);
+  // TELEGRAM_API_ID is a public identifier, not a secret — do not redact it.
   try {
     const session = readSessionString(getConfig());
     if (session) secrets.push(session);
   } catch {
     /* config may be incomplete during early errors */
   }
-  for (const secret of secrets) {
-    if (!secret || secret.length < 4) continue;
+  cachedSecrets = secrets.filter((s) => s && s.length >= 4);
+  return cachedSecrets;
+}
+
+/** Invalidate cached secrets (call after session write). */
+export function invalidateRedactionCache(): void {
+  cachedSecrets = null;
+}
+
+export function redact(text: string): string {
+  let out = text;
+  for (const secret of loadSecrets()) {
     out = out.split(secret).join("[redacted]");
   }
   return out;

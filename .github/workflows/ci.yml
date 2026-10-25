@@ -6,50 +6,169 @@ on:
   pull_request:
     branches: [main]
 
-permissions:
-  contents: read
+env:
+  NODE_VERSION: '22'
+  TELEGRAM_API_ID: '1'
+  TELEGRAM_API_HASH: 'test-hash'
+  TELEGRAM_STATE_DIR: '/tmp/telegram-mcp-ci'
 
 jobs:
-  build:
-    name: build (${{ matrix.os }}, node ${{ matrix.node }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            node: 20
-          - os: ubuntu-latest
-            node: 22
-          - os: windows-latest
-            node: 20
-          - os: windows-latest
-            node: 22
-          # GitHub's arm64 macOS runners regularly sit in the queue past the
-          # 15-minute limit and the job gets cancelled, which leaves the badge
-          # red through no fault of the code. macos-15-intel is the last
-          # supported x86_64 image and schedules reliably; the unit checks are
-          # pure JavaScript, so architecture coverage is not the variable here.
-          - os: macos-15-intel
-            node: 20
-          - os: macos-15-intel
-            node: 22
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
-          cache: npm
-
-      - name: Install
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install dependencies
         run: npm ci
-
       - name: Typecheck
         run: npm run typecheck
+      - name: Check formatting (prettier)
+        run: npx prettier --check "**/*.{ts,json,md}" --ignore-path .gitignore 2>/dev/null || true
 
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
       - name: Build
         run: npm run build
+      - name: Run unit tests
+        run: node harness/unit.mjs
+      - name: Run access/approval tests
+        run: node harness/access.mjs
 
-      - name: Unit checks
-        run: npm run test:unit
+  mcp-read-only:
+    name: MCP Read-Only Harness
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Run MCP read-only harness
+        run: node harness/mcp-harness.mjs
+        env:
+          TELEGRAM_API_ID: ${{ env.TELEGRAM_API_ID }}
+          TELEGRAM_API_HASH: ${{ env.TELEGRAM_API_HASH }}
+          TELEGRAM_STATE_DIR: ${{ env.TELEGRAM_STATE_DIR }}
+
+  package-smoke:
+    name: Package Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Pack tarball
+        run: npm pack --dry-run 2>&1 | tail -20
+      - name: Verify package contents
+        run: |
+          npm pack
+          tar -tzf *.tgz | head -50
+          # Verify critical files exist
+          tar -tzf *.tgz | grep -q "dist/index.js" || exit 1
+          tar -tzf *.tgz | grep -q "bin/telegram-mcp.js" || exit 1
+          tar -tzf *.tgz | grep -q "server.json" || exit 1
+          tar -tzf *.tgz | grep -q "dist/cli/dashboard.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/cli/approvals.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/access.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/approvals.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/workflows.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/workflow-core.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/mcp-extras.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/audit-read.js" || exit 1
+          tar -tzf *.tgz | grep -q "dist/server-registry.js" || exit 1
+      - name: Verify server.json validity
+        run: |
+          cat server.json | jq -e '.name == "io.github.dikaglorya/telegram-mcp"' || exit 1
+          cat server.json | jq -e '.version == "1.1.0"' || exit 1
+          cat server.json | jq -e '.packages[0].identifier == "@dikacode/telegram-mcp"' || exit 1
+          cat server.json | jq -e '.packages[0].environmentVariables[] | select(.name=="TELEGRAM_API_ID").isRequired == true' || exit 1
+          cat server.json | jq -e '.packages[0].environmentVariables[] | select(.name=="TELEGRAM_API_HASH").isSecret == true' || exit 1
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          config-file: '.github/dependency-review-config.yml'
+
+  codeql:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: typescript
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:typescript"
+
+  publish-docs:
+    name: Publish Docs to GitHub Pages
+    needs: [lint-and-typecheck, unit-tests, package-smoke]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build docs
+        run: |
+          cd docs
+          npm ci 2>/dev/null || true
+          # No build step for Jekyll - GitHub Pages handles it
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -23,7 +23,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
 import { Api } from "telegram";
-import { getConfig, hasSession, readSessionString, writeSessionString } from "./config.js";
+import { getConfig, hasSession, readSessionString, writeSessionString, invalidateRedactionCache } from "./config.js";
 import { createLogger } from "./logger.js";
 import { disconnect, adoptClient } from "./telegram.js";
 import { ok, guard } from "./util.js";
@@ -40,6 +40,7 @@ type Pending = {
 
 let pending: Pending | null = null;
 const PENDING_TTL_MS = 10 * 60 * 1000;
+let loginCleanupInterval: ReturnType<typeof setInterval> | null = null;
 
 function expired(): boolean {
   return pending !== null && Date.now() - pending.createdAt > PENDING_TTL_MS;
@@ -65,6 +66,24 @@ function needPending(): Pending {
   return pending;
 }
 
+/** Periodic cleanup for abandoned pending logins — prevents socket leaks. */
+if (typeof setInterval === "function") {
+  loginCleanupInterval = setInterval(() => {
+    if (expired()) {
+      void discardPending();
+    }
+  }, 60_000);
+  loginCleanupInterval.unref?.();
+}
+
+/** Clear the login cleanup interval (called on shutdown). */
+export function clearLoginCleanupInterval(): void {
+  if (loginCleanupInterval) {
+    clearInterval(loginCleanupInterval);
+    loginCleanupInterval = null;
+  }
+}
+
 /** Telegram requires a country code and no spaces/dashes. */
 function normalizePhone(raw: string): string {
   const trimmed = raw.trim();
@@ -80,6 +99,7 @@ function normalizePhone(raw: string): string {
 async function finishLogin(p: Pending, user: Record<string, unknown>): Promise<Record<string, unknown>> {
   const session = (p.client.session as StringSession).save();
   writeSessionString(getConfig(), session);
+  invalidateRedactionCache();
   pending = null;
 
   // Hand the live client to the server so tools work immediately, without a
